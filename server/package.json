@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "start": "NODE_ENV=production node src/server.js",
+    "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node \"DataBase Seed/seedProducts.js\"",
     "seed:admin": "node \"DataBase Seed/seedAdmin.js\"",

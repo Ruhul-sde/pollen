@@ -73,6 +73,11 @@ async function bootstrap() {
       logger.info("[Server] Shutdown complete");
       process.exit(0);
     });
+
+    // Close idle keep-alive sockets immediately so server.close doesn't hang
+    if (typeof server.closeIdleConnections === "function") {
+      server.closeIdleConnections();
+    }
   };
 
   process.on("SIGTERM", () => shutdown("SIGTERM"));

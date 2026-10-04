@@ -139,6 +139,16 @@ if (!isProd) {
 // ── Static uploads serving ────────────────────────────────────────────────
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
+// ── Root endpoint for reverse proxy / health checks ───────────────────────
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Pollen API Server is running",
+    environment: process.env.NODE_ENV || "development",
+    health: "/api/health",
+  });
+});
+
 // ── Routes (versioned under /api/v1) ──────────────────────────────────────
 app.use("/api/health", healthRoutes);         // backward compat
 app.use("/api/v1/health", healthRoutes);
