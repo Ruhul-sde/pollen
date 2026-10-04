@@ -195,7 +195,7 @@ export function AddressForm({
         <label className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 block mb-1.5">
           Address Type
         </label>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {(["Home", "Work"] as const).map((type) => (
             <button
               key={type}
@@ -204,7 +204,7 @@ export function AddressForm({
                 setAddressType(type);
                 updateField("label", type);
               }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide border transition-all cursor-pointer ${
+              className={`px-3.5 py-2.5 rounded-xl text-xs font-bold tracking-wide border transition-all cursor-pointer flex items-center justify-center text-center ${
                 addressType === type
                   ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-2xs"
                   : "border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/60"
@@ -408,13 +408,13 @@ export function AddressForm({
       )}
 
       {/* Form Action Buttons */}
-      <div className="flex items-center justify-end gap-2.5 pt-2">
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-xl border border-neutral-300 dark:border-neutral-700 px-4 py-2.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="w-full sm:w-auto rounded-xl border border-neutral-300 dark:border-neutral-700 px-4 py-2.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer text-center"
           >
             Cancel
           </button>
@@ -422,7 +422,7 @@ export function AddressForm({
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center justify-center gap-2 rounded-xl bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors cursor-pointer shadow-sm disabled:opacity-50 text-center"
         >
           {loading ? (
             <>

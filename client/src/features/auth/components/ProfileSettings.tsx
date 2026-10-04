@@ -302,32 +302,32 @@ export function ProfileSettings({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-3 sm:p-5"
+        className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm p-2 sm:p-4 md:p-6"
         onClick={onClose}
       >
         <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.98 }}
+          initial={{ opacity: 0, y: 16, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 16, scale: 0.98 }}
           transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-          className="relative flex h-[92vh] sm:h-[88vh] max-h-[780px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl sm:rounded-[28px] border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 shadow-[0_25px_70px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)]"
+          className="relative flex h-[94dvh] sm:h-[88vh] max-h-[780px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-neutral-100 shadow-[0_25px_70px_rgba(0,0,0,0.25)] dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)]"
           onClick={(event) => event.stopPropagation()}
         >
           {/* Header */}
-          <div className="relative border-b border-neutral-200/80 dark:border-neutral-800/80 bg-gradient-to-b from-amber-500/[0.08] via-neutral-50/60 to-white dark:from-neutral-900/90 dark:via-[#161616] dark:to-[#121212] p-5 sm:p-7 shrink-0">
+          <div className="relative border-b border-neutral-200/80 dark:border-neutral-800/80 bg-gradient-to-b from-amber-500/[0.08] via-neutral-50/60 to-white dark:from-neutral-900/90 dark:via-[#161616] dark:to-[#121212] p-3.5 sm:p-5 md:p-6 shrink-0">
             {/* Subtle luxury ambient glows */}
             <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-amber-400/15 dark:bg-amber-500/10 blur-3xl" />
             <div className="pointer-events-none absolute -left-16 bottom-0 h-44 w-44 rounded-full bg-neutral-200/40 dark:bg-white/5 blur-2xl" />
 
-            <div className="relative flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="flex h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
-                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.25em] text-neutral-600 dark:text-neutral-400">
+            <div className="relative flex items-center justify-between gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="flex h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)] shrink-0" />
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] sm:tracking-[0.25em] text-neutral-600 dark:text-neutral-400 truncate">
                   {config?.branding?.brandName || "Pollen"} · My Profile
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -352,21 +352,21 @@ export function ProfileSettings({
             </div>
 
             {/* Profile Avatar & Details */}
-            <div className="relative mt-4 sm:mt-5 flex items-center gap-3.5 sm:gap-4">
-              <div className="flex h-13 w-13 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-amber-500/30 dark:border-amber-400/30 bg-gradient-to-br from-amber-100 via-amber-50 to-white dark:from-amber-400/20 dark:via-neutral-900 dark:to-black font-mono text-base sm:text-lg font-extrabold text-amber-800 dark:text-amber-300 shadow-sm">
+            <div className="relative mt-3 sm:mt-4 flex items-center gap-3 sm:gap-4">
+              <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border border-amber-500/30 dark:border-amber-400/30 bg-gradient-to-br from-amber-100 via-amber-50 to-white dark:from-amber-400/20 dark:via-neutral-900 dark:to-black font-mono text-base sm:text-lg font-extrabold text-amber-800 dark:text-amber-300 shadow-sm">
                 {initials}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <h3 className="truncate text-base sm:text-lg font-bold text-neutral-900 dark:text-white tracking-tight">
                     {user.name || "Fragrance Enthusiast"}
                   </h3>
                   {user.role === "admin" ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-400/20 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-400/40">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-400/20 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-400/40 shrink-0">
                       <ShieldCheck size={10} /> Admin
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 dark:bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-white/10">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 dark:bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-white/10 shrink-0">
                       Member
                     </span>
                   )}
@@ -380,10 +380,10 @@ export function ProfileSettings({
 
             {/* Admin Portal Banner */}
             {user.role === "admin" && onOpenAdmin && (
-              <div className="relative mt-3.5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300/80 dark:border-amber-500/30 bg-gradient-to-r from-amber-100/90 via-amber-50/70 to-transparent dark:from-amber-500/15 dark:via-amber-500/5 dark:to-transparent px-3.5 py-2">
-                <div className="flex items-center gap-2 text-xs font-semibold text-amber-900 dark:text-amber-200">
+              <div className="relative mt-2.5 sm:mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300/80 dark:border-amber-500/30 bg-gradient-to-r from-amber-100/90 via-amber-50/70 to-transparent dark:from-amber-500/15 dark:via-amber-500/5 dark:to-transparent px-3 py-2 sm:px-3.5">
+                <div className="flex items-center gap-2 text-xs font-semibold text-amber-900 dark:text-amber-200 min-w-0">
                   <Sparkles size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Administrative privileges active</span>
+                  <span className="truncate">Administrative privileges active</span>
                 </div>
                 <button
                   type="button"
@@ -391,7 +391,7 @@ export function ProfileSettings({
                     onClose();
                     onOpenAdmin();
                   }}
-                  className="rounded-lg bg-amber-500 dark:bg-amber-400 px-3 py-1 font-bold text-[10px] uppercase tracking-wider text-black hover:bg-amber-400 dark:hover:bg-amber-300 transition-colors shadow-xs cursor-pointer"
+                  className="rounded-lg bg-amber-500 dark:bg-amber-400 px-2.5 sm:px-3 py-1 font-bold text-[10px] uppercase tracking-wider text-black hover:bg-amber-400 dark:hover:bg-amber-300 transition-colors shadow-xs cursor-pointer shrink-0"
                 >
                   Admin Portal
                 </button>
@@ -399,12 +399,12 @@ export function ProfileSettings({
             )}
 
             {/* Responsive Tab Navigation */}
-            <div className="mt-4 sm:mt-5 flex overflow-x-auto no-scrollbar rounded-xl sm:rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-neutral-100/90 dark:bg-neutral-900/90 p-1 gap-1">
+            <div className="mt-3 sm:mt-4 flex overflow-x-auto no-scrollbar rounded-xl sm:rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-neutral-100/90 dark:bg-neutral-900/90 p-1 gap-1">
               {[
-                { id: "orders", label: "My Orders", count: userOrders.length, icon: Package },
-                { id: "addresses", label: "Addresses", count: addresses.length, icon: MapPin },
-                { id: "details", label: "Personal Info", icon: UserIcon },
-                { id: "security", label: "Security", icon: KeyRound },
+                { id: "orders", label: "Orders", fullLabel: "My Orders", count: userOrders.length, icon: Package },
+                { id: "addresses", label: "Addresses", fullLabel: "Addresses", count: addresses.length, icon: MapPin },
+                { id: "details", label: "Profile", fullLabel: "Personal Info", icon: UserIcon },
+                { id: "security", label: "Security", fullLabel: "Security", icon: KeyRound },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const active = activeTab === tab.id;
@@ -413,17 +413,18 @@ export function ProfileSettings({
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex shrink-0 sm:flex-1 items-center justify-center gap-1.5 rounded-lg sm:rounded-xl px-2.5 sm:px-3 py-2 text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
+                    className={`flex shrink-0 flex-1 min-w-0 items-center justify-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
                       active
                         ? "bg-white dark:bg-neutral-800 text-neutral-950 dark:text-white shadow-xs font-extrabold"
                         : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5"
                     }`}
                   >
                     <Icon size={13} className="shrink-0" />
-                    <span>{tab.label}</span>
+                    <span className="sm:hidden">{tab.label}</span>
+                    <span className="hidden sm:inline">{tab.fullLabel}</span>
                     {typeof tab.count === "number" && tab.count > 0 && (
                       <span
-                        className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[9px] font-bold ${
+                        className={`rounded-full px-1.5 py-0.2 text-[9px] font-bold ${
                           active
                             ? "bg-neutral-900 text-white dark:bg-white dark:text-black"
                             : "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300"
@@ -439,7 +440,7 @@ export function ProfileSettings({
           </div>
 
           {/* Content Body */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-7 text-sm space-y-6">
+          <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 md:p-7 text-xs sm:text-sm space-y-4 sm:space-y-6">
             {/* TAB 1: ORDERS */}
             {activeTab === "orders" && (
               <div className="space-y-4">
@@ -489,31 +490,33 @@ export function ProfileSettings({
                       return (
                         <div
                           key={order.id}
-                          className="rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-4 sm:p-5 shadow-xs transition-all hover:border-neutral-300 dark:hover:border-neutral-700"
+                          className="rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-3.5 sm:p-5 shadow-xs transition-all hover:border-neutral-300 dark:hover:border-neutral-700"
                         >
-                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-100 dark:border-neutral-800/80 pb-3">
-                            <div>
-                              <span className="font-mono text-xs font-bold text-neutral-900 dark:text-white tracking-wide">
+                          <div className="flex items-start sm:items-center justify-between gap-2 border-b border-neutral-100 dark:border-neutral-800/80 pb-3">
+                            <div className="min-w-0">
+                              <span className="font-mono text-xs font-bold text-neutral-900 dark:text-white tracking-wide truncate block">
                                 {(order.order_id || order.orderId || order.id?.slice(-8) || "").startsWith("PN")
                                   ? (order.order_id || order.orderId)
                                   : `#${order.order_id || order.orderId || order.id?.slice(-8)}`}
                               </span>
                               <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5 flex items-center gap-1">
                                 <Calendar size={11} className="shrink-0" />
-                                {new Date(order.created_at).toLocaleDateString("en-IN", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })}
+                                <span>
+                                  {new Date(order.created_at).toLocaleDateString("en-IN", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </span>
                               </p>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right shrink-0">
                               <span className="font-mono font-bold text-sm text-amber-600 dark:text-amber-400">
                                 ₹{Number(order.total_amount || 0).toLocaleString()}
                               </span>
                               <div className="mt-0.5">
                                 <span
-                                  className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${
+                                  className={`inline-block rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${
                                     order.status === "delivered"
                                       ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30"
                                       : order.status === "shipped"
@@ -532,21 +535,21 @@ export function ProfileSettings({
                           </div>
 
                           {hasTracking ? (
-                            <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-purple-50/80 dark:bg-purple-950/30 border border-purple-200/70 dark:border-purple-800/40 px-3.5 py-2.5 text-xs">
-                              <div className="flex items-center gap-2">
+                            <div className="mt-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl bg-purple-50/80 dark:bg-purple-950/30 border border-purple-200/70 dark:border-purple-800/40 p-3 sm:px-3.5 sm:py-2.5 text-xs">
+                              <div className="flex items-center gap-2 min-w-0">
                                 <Truck size={15} className="text-purple-600 dark:text-purple-400 shrink-0" />
-                                <span className="text-neutral-700 dark:text-neutral-300">
+                                <span className="text-neutral-700 dark:text-neutral-300 truncate">
                                   AWB:{" "}
-                                  <strong className="font-mono text-neutral-900 dark:text-white font-semibold">
+                                  <strong className="font-mono text-neutral-900 dark:text-white font-semibold break-all">
                                     {order.tracking_id}
                                   </strong>
                                 </span>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
                                 <button
                                   type="button"
                                   onClick={() => handleCopyTrackingId(order.tracking_id)}
-                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-white transition-colors cursor-pointer"
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-white transition-colors cursor-pointer px-2 py-1 rounded-md bg-purple-100/60 dark:bg-purple-900/40 sm:bg-transparent"
                                 >
                                   {copiedTrackingId === order.tracking_id ? (
                                     <>
@@ -575,7 +578,7 @@ export function ProfileSettings({
                               </div>
                             </div>
                           ) : order.status === "pending" ? (
-                            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/40 px-3.5 py-2.5 text-xs text-amber-900 dark:text-amber-200">
+                            <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/40 p-3 sm:px-3.5 sm:py-2.5 text-xs text-amber-900 dark:text-amber-200">
                               <div className="flex items-center gap-2">
                                 <Clock size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
                                 <span className="text-[11px] font-medium">
@@ -589,7 +592,7 @@ export function ProfileSettings({
                                     onClose();
                                     onPayNow(order);
                                   }}
-                                  className="inline-flex items-center gap-1.5 rounded-lg bg-black dark:bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-xs cursor-pointer"
+                                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-black dark:bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-xs cursor-pointer"
                                 >
                                   <CreditCard size={12} />
                                   <span>Pay Now</span>
@@ -597,28 +600,28 @@ export function ProfileSettings({
                               )}
                             </div>
                           ) : order.status === "confirmed" ? (
-                            <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/40 px-3.5 py-2 text-xs text-blue-700 dark:text-blue-300">
-                              <div className="flex items-center gap-2">
-                                <CheckCircle2 size={13} className="shrink-0 text-blue-600 dark:text-blue-400" />
+                            <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/40 p-3 sm:px-3.5 sm:py-2 text-xs text-blue-700 dark:text-blue-300">
+                              <div className="flex items-start sm:items-center gap-2">
+                                <CheckCircle2 size={13} className="shrink-0 text-blue-600 dark:text-blue-400 mt-0.5 sm:mt-0" />
                                 <span className="text-[11px]">
                                   Order Confirmed · Preparing for dispatch. Tracking ID will appear once shipped by admin.
                                 </span>
                               </div>
-                              <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-500 font-mono">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-500 font-mono shrink-0 self-end sm:self-auto">
                                 Confirmed
                               </span>
                             </div>
                           ) : (
-                            <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/40 border border-neutral-200/60 dark:border-neutral-800/60 px-3.5 py-2 text-xs text-neutral-500 dark:text-neutral-400">
-                              <div className="flex items-center gap-2">
-                                <Clock size={13} className="shrink-0 text-amber-500" />
+                            <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/40 border border-neutral-200/60 dark:border-neutral-800/60 p-3 sm:px-3.5 sm:py-2 text-xs text-neutral-500 dark:text-neutral-400">
+                              <div className="flex items-start sm:items-center gap-2">
+                                <Clock size={13} className="shrink-0 text-amber-500 mt-0.5 sm:mt-0" />
                                 <span className="text-[11px]">
                                   {order.status === "cancelled"
                                     ? "Order has been cancelled."
                                     : "Preparing for dispatch · Tracking ID will appear once shipped by admin."}
                                 </span>
                               </div>
-                              <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 font-mono">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 font-mono shrink-0 self-end sm:self-auto">
                                 {order.status || "Pending"}
                               </span>
                             </div>
@@ -634,7 +637,7 @@ export function ProfileSettings({
             {/* TAB 2: ADDRESSES */}
             {activeTab === "addresses" && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
                     Saved Addresses ({addresses.length})
                   </h4>
@@ -649,7 +652,7 @@ export function ProfileSettings({
                         setShowAddAddress(true);
                       }
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 dark:bg-white px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-xs cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 dark:bg-white px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-xs cursor-pointer shrink-0"
                   >
                     <Plus size={13} />
                     <span>{showAddAddress ? "Cancel" : "Add Address"}</span>
@@ -657,7 +660,7 @@ export function ProfileSettings({
                 </div>
 
                 {showAddAddress && (
-                  <div className="rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-neutral-50/80 dark:bg-neutral-900/60 p-4 sm:p-5 shadow-xs space-y-3">
+                  <div className="rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-neutral-50/80 dark:bg-neutral-900/60 p-3.5 sm:p-5 shadow-xs space-y-3">
                     <div className="flex items-center justify-between border-b border-neutral-200/80 dark:border-neutral-800 pb-2.5">
                       <span className="text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200">
                         {editingAddress ? "Edit Delivery Address" : "New Delivery Address"}
@@ -712,7 +715,7 @@ export function ProfileSettings({
                     ))}
                   </div>
                 ) : addresses.length === 0 && !showAddAddress ? (
-                  <div className="rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/20 p-8 text-center">
+                  <div className="rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/20 p-6 sm:p-8 text-center">
                     <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                       <MapPin size={24} />
                     </div>
@@ -733,7 +736,7 @@ export function ProfileSettings({
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {addresses.map((addr) => {
                       const recipientName = addr.full_name || (addr as any).name || "Customer";
                       const recipientPhone = addr.phone || "";
@@ -751,10 +754,10 @@ export function ProfileSettings({
                       return (
                         <div
                           key={addr.id}
-                          className="relative rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-4 sm:p-5 shadow-xs transition-all hover:border-neutral-300 dark:hover:border-neutral-700 flex flex-col justify-between"
+                          className="relative rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-3.5 sm:p-5 shadow-xs transition-all hover:border-neutral-300 dark:hover:border-neutral-700 flex flex-col justify-between"
                         >
                           <div>
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between gap-2">
                               <span className="rounded-md bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
                                 {addr.label === "Work" ? "🏢 Work" : "🏠 Home"}
                               </span>
@@ -797,10 +800,10 @@ export function ProfileSettings({
                             )}
                           </div>
 
-                          <div className="mt-3.5 pt-3 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
-                            <span className="flex items-center gap-1.5">
+                          <div className="mt-3.5 pt-3 border-t border-neutral-100 dark:border-neutral-800/80 flex flex-wrap items-center justify-between gap-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                            <span className="flex items-center gap-1.5 truncate">
                               <Truck size={13} className="text-amber-500 shrink-0" />
-                              <span>Speed Post Express available</span>
+                              <span className="truncate">Speed Post Express</span>
                             </span>
                             <button
                               type="button"
@@ -808,7 +811,7 @@ export function ProfileSettings({
                                 setEditingAddress(addr);
                                 setShowAddAddress(true);
                               }}
-                              className="inline-flex items-center gap-1 font-semibold text-neutral-700 dark:text-neutral-300 hover:underline cursor-pointer"
+                              className="inline-flex items-center gap-1 font-semibold text-neutral-700 dark:text-neutral-300 hover:underline cursor-pointer shrink-0 ml-auto"
                             >
                               <Edit2 size={11} />
                               <span>Edit</span>
@@ -900,7 +903,7 @@ export function ProfileSettings({
                 <button
                   type="submit"
                   disabled={savingInfo}
-                  className="rounded-xl bg-amber-500 dark:bg-amber-400 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-amber-400 dark:hover:bg-amber-300 disabled:opacity-50 transition-colors shadow-xs cursor-pointer"
+                  className="w-full sm:w-auto rounded-xl bg-amber-500 dark:bg-amber-400 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-amber-400 dark:hover:bg-amber-300 disabled:opacity-50 transition-colors shadow-xs cursor-pointer text-center"
                 >
                   {savingInfo ? "Saving..." : "Save Profile"}
                 </button>
@@ -1017,7 +1020,7 @@ export function ProfileSettings({
                 <button
                   type="submit"
                   disabled={submittingPassword}
-                  className="rounded-xl bg-amber-500 dark:bg-amber-400 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-amber-400 dark:hover:bg-amber-300 disabled:opacity-50 transition-colors shadow-xs cursor-pointer"
+                  className="w-full sm:w-auto rounded-xl bg-amber-500 dark:bg-amber-400 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-amber-400 dark:hover:bg-amber-300 disabled:opacity-50 transition-colors shadow-xs cursor-pointer text-center"
                 >
                   {submittingPassword ? "Updating..." : "Update Password"}
                 </button>
