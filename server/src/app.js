@@ -3,8 +3,11 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import mongoSanitize from "express-mongo-sanitize";
+import compression from "compression";
+import hpp from "hpp";
 import { globalLimiter } from "./shared/middleware/rateLimiter.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
+import logger from "./config/logger.js";
 
 // ── Route imports ──────────────────────────────────────────────────────────
 import healthRoutes from "./routes/healthRoutes.js";
@@ -24,18 +27,37 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 
 const app = express();
+const isProd = process.env.NODE_ENV === "production";
 
-// Trust reverse proxy (Docker, Nginx, Cloudflare, etc.) for correct client IP detection
+// ── Trust reverse proxy (Docker, Nginx, Cloudflare) ────────────────────────
 app.set("trust proxy", 1);
 
-// ── Security middleware ────────────────────────────────────────────────────
+// ── Security headers (Helmet) ──────────────────────────────────────────────
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: false,
+    // Enable CSP in production; off in dev for hot-reload compatibility
+    contentSecurityPolicy: isProd
+      ? {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+            connectSrc: ["'self'", "https://pollenstore.in", "https://api.razorpay.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: [],
+          },
+        }
+      : false,
+    hsts: isProd
+      ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+      : false,
   })
 );
 
+// ── CORS ───────────────────────────────────────────────────────────────────
 const allowedOrigins = [
   process.env.CLIENT_URL,
   "http://localhost:3000",
@@ -49,8 +71,8 @@ const allowedOrigins = [
 
 const isAllowedOrigin = (origin) => {
   if (!origin) return true;
-  // Always permit any origin during development
-  if (process.env.NODE_ENV !== "production") return true;
+  // In development, permit all origins
+  if (!isProd) return true;
   if (allowedOrigins.includes(origin)) return true;
   try {
     const { hostname } = new URL(origin);
@@ -92,19 +114,32 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-// ── Sanitization ───────────────────────────────────────────────────────────
+// ── HTTP Parameter Pollution protection ────────────────────────────────────
+app.use(hpp());
+
+// ── NoSQL injection sanitization ───────────────────────────────────────────
 app.use(mongoSanitize());
 
-// ── Logging (dev only) ─────────────────────────────────────────────────────
-if (process.env.NODE_ENV === "development") {
+// ── Response compression ───────────────────────────────────────────────────
+app.use(compression());
+
+// ── Request logging ────────────────────────────────────────────────────────
+if (!isProd) {
+  // Development: colorized Morgan through Winston
   const morgan = (await import("morgan")).default;
-  app.use(morgan("dev"));
+  const morganStream = { write: (msg) => logger.http(msg.trim()) };
+  app.use(morgan("dev", { stream: morganStream }));
+} else {
+  // Production: minimal structured access log (method, url, status, response-time)
+  const morgan = (await import("morgan")).default;
+  const morganStream = { write: (msg) => logger.info(msg.trim()) };
+  app.use(morgan("combined", { stream: morganStream }));
 }
 
 // ── Static uploads serving ────────────────────────────────────────────────
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
-// ── Routes (all versioned under /api/v1) ──────────────────────────────────
+// ── Routes (versioned under /api/v1) ──────────────────────────────────────
 app.use("/api/health", healthRoutes);         // backward compat
 app.use("/api/v1/health", healthRoutes);
 

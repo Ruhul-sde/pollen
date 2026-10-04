@@ -1,3 +1,5 @@
+import logger from "../config/logger.js";
+
 /**
  * 404 Handler for undefined routes
  */
@@ -37,11 +39,21 @@ export function errorHandler(err, req, res, next) {
     message = `${field} already exists`;
   }
 
-  console.error(`[Error] ${req.method} ${req.originalUrl}:`, message);
+  // Log server errors (5xx) with stack trace; client errors (4xx) at warn level
+  if (statusCode >= 500) {
+    logger.error(`[Error] ${req.method} ${req.originalUrl}`, {
+      statusCode,
+      message,
+      stack: err.stack,
+    });
+  } else {
+    logger.warn(`[Error] ${req.method} ${req.originalUrl}`, { statusCode, message });
+  }
 
   res.status(statusCode).json({
     success: false,
     message,
+    // Only expose stack traces in development
     stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 }

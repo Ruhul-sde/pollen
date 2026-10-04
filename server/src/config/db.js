@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import logger from "../config/logger.js";
 
 /**
  * Connect to MongoDB database using Mongoose
@@ -8,10 +9,14 @@ export async function connectDB() {
 
   try {
     const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      retryWrites: true,
     });
 
-    console.log(`[MongoDB] Connected successfully: ${conn.connection.host}/${conn.connection.name}`);
+    logger.info(`[MongoDB] Connected successfully: ${conn.connection.host}/${conn.connection.name}`);
 
     // Drop legacy unique index on trackingId if present to avoid E11000 duplicate key error on checkout
     try {
@@ -22,28 +27,28 @@ export async function connectDB() {
       );
       for (const idx of uniqueTrackingIndexes) {
         await ordersCol.dropIndex(idx.name);
-        console.log(`[MongoDB] Dropped legacy unique index "${idx.name}" on orders collection`);
+        logger.info(`[MongoDB] Dropped legacy unique index "${idx.name}" on orders collection`);
       }
     } catch (dropErr) {
       if (dropErr.code !== 26 && !dropErr.message?.includes("ns not found")) {
-        console.warn(`[MongoDB] Tracking index cleanup note: ${dropErr.message}`);
+        logger.warn(`[MongoDB] Tracking index cleanup note: ${dropErr.message}`);
       }
     }
   } catch (error) {
-    console.error(`[MongoDB] Connection error: ${error.message}`);
+    logger.error(`[MongoDB] Connection error: ${error.message}`);
     // Do not exit process immediately so server can still serve health check / helpful errors
   }
 
   mongoose.connection.on("error", (err) => {
-    console.error(`[MongoDB] Runtime error: ${err.message}`);
+    logger.error(`[MongoDB] Runtime error: ${err.message}`);
   });
 
   mongoose.connection.on("disconnected", () => {
-    console.warn("[MongoDB] Disconnected from database");
+    logger.warn("[MongoDB] Disconnected from database");
   });
 
   mongoose.connection.on("reconnected", () => {
-    console.log("[MongoDB] Reconnected to database");
+    logger.info("[MongoDB] Reconnected to database");
   });
 }
 
