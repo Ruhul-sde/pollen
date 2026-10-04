@@ -29,7 +29,5 @@ const loyaltySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-loyaltySchema.index({ userId: 1 });
-
 const Loyalty = mongoose.model("Loyalty", loyaltySchema);
 export default Loyalty;

@@ -237,8 +237,18 @@ export async function autoSeedProducts() {
 
     // Load from JSON seed file
     const { default: products } = await import("../../DataBase Seed/products.json", { assert: { type: "json" } });
-    await Product.insertMany(products);
-    console.log(`[Products] Seeded ${products.length} products`);
+    const formatted = products.map((p) => {
+      if (Array.isArray(p.notes)) {
+        const types = ["top", "heart", "base"];
+        return {
+          ...p,
+          notes: p.notes.map((n, idx) => (typeof n === "string" ? { type: types[idx % 3] || "top", name: n.trim(), icon: "" } : n)),
+        };
+      }
+      return p;
+    });
+    await Product.insertMany(formatted);
+    console.log(`[Products] Seeded ${formatted.length} products`);
   } catch (err) {
     console.warn("[Products] Auto-seed warning:", err.message);
   }

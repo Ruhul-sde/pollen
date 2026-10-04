@@ -30,8 +30,6 @@ const cartSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-cartSchema.index({ userId: 1 });
-
 // Virtual: subtotal before discounts
 cartSchema.virtual("subtotal").get(function () {
   return this.items.reduce((sum, item) => sum + item.unitPrice * item.qty, 0);

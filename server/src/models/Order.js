@@ -53,7 +53,7 @@ const trackingEventSchema = new mongoose.Schema(
 
 const orderSchema = new mongoose.Schema(
   {
-    orderId: { type: String, unique: true, index: true },
+    orderId: { type: String, unique: true },
     userId: { type: mongoose.Schema.Types.Mixed, required: true },
 
     items: [orderItemSchema],
@@ -115,7 +115,6 @@ const orderSchema = new mongoose.Schema(
 orderSchema.index({ userId: 1, createdAt: -1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ paymentStatus: 1 });
-orderSchema.index({ orderId: 1 });
 
 /**
  * Generate unique Order ID following the formula:

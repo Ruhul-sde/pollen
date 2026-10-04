@@ -25,6 +25,9 @@ import settingsRoutes from "./routes/settingsRoutes.js";
 
 const app = express();
 
+// Trust reverse proxy (Docker, Nginx, Cloudflare, etc.) for correct client IP detection
+app.set("trust proxy", 1);
+
 // ── Security middleware ────────────────────────────────────────────────────
 app.use(
   helmet({

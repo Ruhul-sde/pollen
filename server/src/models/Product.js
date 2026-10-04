@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const noteSchema = new mongoose.Schema(
   {
-    type: { type: String, enum: ["top", "heart", "base"], required: true },
+    type: { type: String, enum: ["top", "heart", "base"], default: "top" },
     name: { type: String, required: true, trim: true },
     icon: { type: String, default: "" },
   },
@@ -13,7 +13,7 @@ const productSchema = new mongoose.Schema(
   {
     // Identification
     productId: { type: Number, index: true }, // legacy numeric ID
-    slug: { type: String, trim: true, lowercase: true, unique: true, index: true },
+    slug: { type: String, trim: true, lowercase: true, unique: true },
     name: { type: String, required: [true, "Product name is required"], trim: true },
 
     // Taxonomy
@@ -32,8 +32,19 @@ const productSchema = new mongoose.Schema(
     concentration: { type: String, default: "Parfum" }, // EDP, EDT, Parfum
     gender: { type: String, enum: ["Unisex", "Male", "Female"], default: "Unisex" },
     longevity: { type: String, default: "" },
-    sillage: { type: String, default: "" },
-    notes: [noteSchema],
+    notes: {
+      type: [noteSchema],
+      set: function (val) {
+        if (!Array.isArray(val)) return val;
+        const types = ["top", "heart", "base"];
+        return val.map((n, idx) => {
+          if (typeof n === "string") {
+            return { type: types[idx % 3] || "top", name: n.trim(), icon: "" };
+          }
+          return n;
+        });
+      },
+    },
     ingredients: { type: String, default: "" },
     country: { type: String, default: "" }, // Country of origin
 
@@ -72,14 +83,27 @@ const productSchema = new mongoose.Schema(
     soldCount: { type: Number, default: 0 },
     wishlistCount: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  { timestamps: true, suppressReservedKeysWarning: true }
 );
+
+// Normalize notes if passed as strings (e.g. from JSON seeds or simple inputs)
+productSchema.pre("validate", function (next) {
+  if (Array.isArray(this.notes)) {
+    const types = ["top", "heart", "base"];
+    this.notes = this.notes.map((n, idx) => {
+      if (typeof n === "string") {
+        return { type: types[idx % 3] || "top", name: n.trim(), icon: "" };
+      }
+      return n;
+    });
+  }
+  next();
+});
 
 // Text search index
 productSchema.index({ name: "text", tagline: "text", description: "text", tags: "text" });
 productSchema.index({ isPublished: 1, category: 1 });
 productSchema.index({ isPublished: 1, brand: 1 });
-productSchema.index({ slug: 1 });
 
 export const Product = mongoose.model("Product", productSchema);
 export default Product;

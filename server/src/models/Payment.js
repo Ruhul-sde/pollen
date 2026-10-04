@@ -7,7 +7,7 @@ const paymentSchema = new mongoose.Schema(
     orderRef: { type: String, index: true }, // human-readable order ID
 
     // Razorpay fields
-    razorpayOrderId: { type: String, index: true },
+    razorpayOrderId: { type: String },
     razorpayPaymentId: { type: String, index: true, default: "" },
     razorpaySignature: { type: String, select: false },
 

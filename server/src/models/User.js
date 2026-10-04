@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    phone: { type: String, trim: true, sparse: true },
+    phone: { type: String, trim: true, unique: true, sparse: true },
     password: { type: String, required: true, select: false, minlength: 6 },
     role: { type: String, enum: Object.values(ROLES), default: ROLES.USER },
     avatar: { type: String, default: null },
@@ -48,10 +48,7 @@ const userSchema = new mongoose.Schema(
 );
 
 // ── Indexes ────────────────────────────────────────────────────────────────
-userSchema.index({ email: 1 });
-userSchema.index({ phone: 1 }, { unique: true, sparse: true });
 userSchema.index({ role: 1 });
-userSchema.index({ referralCode: 1 }, { sparse: true });
 
 // ── Pre-save: hash password ────────────────────────────────────────────────
 userSchema.pre("save", async function (next) {

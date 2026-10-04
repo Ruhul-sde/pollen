@@ -19,7 +19,7 @@ const invoiceSchema = new mongoose.Schema(
     orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order", required: true, unique: true },
     orderRef: { type: String, index: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    invoiceNumber: { type: String, unique: true, index: true },
+    invoiceNumber: { type: String, unique: true },
 
     issueDate: { type: Date, default: Date.now },
     dueDate: { type: Date, default: null },

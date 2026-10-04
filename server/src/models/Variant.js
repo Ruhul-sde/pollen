@@ -5,7 +5,7 @@ const variantSchema = new mongoose.Schema(
     productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
     volume: { type: String, required: true, trim: true }, // e.g. "50 ML", "100 ML"
     volumeValue: { type: Number }, // numeric ml for sorting
-    SKU: { type: String, unique: true, trim: true },
+    SKU: { type: String, unique: true, sparse: true, trim: true },
     MRP: { type: Number, required: true, min: 0 },
     sellingPrice: { type: Number, required: true, min: 0 },
     discountPrice: { type: Number, default: null }, // optional promotional price
@@ -22,7 +22,6 @@ const variantSchema = new mongoose.Schema(
 );
 
 variantSchema.index({ productId: 1 });
-variantSchema.index({ SKU: 1 }, { unique: true, sparse: true });
 
 variantSchema.virtual("effectivePrice").get(function () {
   return this.discountPrice ?? this.sellingPrice;

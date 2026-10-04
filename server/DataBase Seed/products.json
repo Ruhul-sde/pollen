@@ -7,7 +7,11 @@
     "description": "Black POLLEN perfume bottle with minimalist packaging. A commanding fragrance that asserts presence before you enter the room. Warm woods, dark musk, and a spark of citrus that lingers all day.",
     "storyTitle": "Take the room. Keep your edge.",
     "storyDescription": "Dark musk, cedarwood, and bergamot come together in a fragrance made for the version of you that does not wait for permission.",
-    "notes": ["Dark Musk", "Cedarwood", "Bergamot"],
+    "notes": [
+      { "type": "top", "name": "Bergamot" },
+      { "type": "heart", "name": "Cedarwood" },
+      { "type": "base", "name": "Dark Musk" }
+    ],
     "volume": "50 ML",
     "type": "Parfum",
     "gender": "Unisex",
@@ -36,7 +40,11 @@
     "description": "Burgundy POLLEN perfume bottle with minimalist packaging. A rich cherry accord layered over Turkish rose and bitter almond. Deeply sensual, dangerously addictive.",
     "storyTitle": "Sweet on the surface. Dangerous underneath.",
     "storyDescription": "A collision of ripe cherry, velvety Turkish rose, and bitter almond. An intoxicating presence that refuses to be ignored.",
-    "notes": ["Black Cherry", "Turkish Rose", "Bitter Almond"],
+    "notes": [
+      { "type": "top", "name": "Black Cherry" },
+      { "type": "heart", "name": "Turkish Rose" },
+      { "type": "base", "name": "Bitter Almond" }
+    ],
     "volume": "50 ML",
     "type": "Parfum",
     "gender": "Unisex",
@@ -65,7 +73,11 @@
     "description": "Blue POLLEN perfume bottle with minimalist packaging. White orchid petals lifted on a breeze of green tea and white cedar. Purity distilled into a single breath.",
     "storyTitle": "Clean. Serene. Undeniable.",
     "storyDescription": "White orchid and crisp green tea resting on white cedar. A calm and sophisticated aura that moves with you.",
-    "notes": ["White Orchid", "Green Tea", "White Cedar"],
+    "notes": [
+      { "type": "top", "name": "Green Tea" },
+      { "type": "heart", "name": "White Orchid" },
+      { "type": "base", "name": "White Cedar" }
+    ],
     "volume": "50 ML",
     "type": "Parfum",
     "gender": "Unisex",
@@ -95,9 +107,9 @@
     "storyTitle": "Every mood. Every side of you.",
     "storyDescription": "Experience the full expression of Pollen. Switch effortlessly between Power of You, Lost Cherry, and Fresh Orchid to match any occasion.",
     "notes": [
-      "Power of You (50ml)",
-      "Lost Cherry (50ml)",
-      "Fresh Orchid (50ml)"
+      { "type": "top", "name": "Fresh Orchid (50ml)" },
+      { "type": "heart", "name": "Lost Cherry (50ml)" },
+      { "type": "base", "name": "Power of You (50ml)" }
     ],
     "volume": "3 x 50 ML",
     "type": "Parfum Trio",

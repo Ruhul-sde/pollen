@@ -7,6 +7,7 @@ const createLimiter = (windowMs, max, message) =>
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, message },
+    validate: { xForwardedForHeader: false },
   });
 
 // Global API limiter: 200 req / 15 min

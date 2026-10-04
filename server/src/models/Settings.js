@@ -16,7 +16,6 @@ const settingsSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-settingsSchema.index({ key: 1 });
 settingsSchema.index({ group: 1 });
 
 const Settings = mongoose.model("Settings", settingsSchema);

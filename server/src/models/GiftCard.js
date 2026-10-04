@@ -21,7 +21,5 @@ const giftCardSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-giftCardSchema.index({ code: 1 });
-
 const GiftCard = mongoose.model("GiftCard", giftCardSchema);
 export default GiftCard;

@@ -17,7 +17,7 @@ const returnSchema = new mongoose.Schema(
   {
     orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order", required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    returnId: { type: String, unique: true, index: true },
+    returnId: { type: String, unique: true },
 
     items: [returnItemSchema],
     type: { type: String, enum: Object.values(RETURN_TYPE), required: true },
