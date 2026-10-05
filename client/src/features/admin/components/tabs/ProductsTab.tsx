@@ -56,7 +56,7 @@ function resolveFragranceImage(
       return raw;
     }
     if (raw.startsWith("/uploads")) {
-      const serverOrigin = import.meta.env.VITE_SERVER_URL || "http://localhost:5001";
+      const serverOrigin = import.meta.env.VITE_SERVER_URL || "https://pollen-server.jxdww2.easypanel.host";
       return `${serverOrigin}${raw}`;
     }
     return raw;

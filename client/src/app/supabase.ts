@@ -4,7 +4,7 @@
  */
 
 // Backend API base URL
-const API_BASE_URL = "http://localhost:5001/api";
+const API_BASE_URL = "https://pollen-server.jxdww2.easypanel.host/api";
 
 export const PAYMENT_API_BASE_URL = `${API_BASE_URL}/payments`;
 export const PAYMENT_ORDER_URL = `${PAYMENT_API_BASE_URL}/create-order`;

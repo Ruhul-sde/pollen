@@ -71,7 +71,7 @@ export function mapBackendToFragrance(bp: any, index = 0): FragranceProduct {
     if (bp.imageUrl.startsWith("http") || bp.imageUrl.startsWith("data:")) {
       img = bp.imageUrl;
     } else if (bp.imageUrl.startsWith("/uploads")) {
-      const serverOrigin = import.meta.env.VITE_SERVER_URL || "http://localhost:5001";
+      const serverOrigin = import.meta.env.VITE_SERVER_URL || "https://pollen-server.jxdww2.easypanel.host";
       img = `${serverOrigin}${bp.imageUrl}`;
     } else {
       img = PRODUCT_IMAGE_MAP[slug] || PRODUCT_IMAGE_MAP[name] || bp.imageUrl;

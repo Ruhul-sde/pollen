@@ -18,26 +18,18 @@ async function seedAdmin() {
     await mongoose.connect(MONGO_URI);
     console.log("[Seeder] Connected successfully to MongoDB.");
 
-    const adminEmail = process.env.ADMIN_EMAIL || "admin@pollen.com";
-    const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+    const adminEmail = process.env.ADMIN_EMAIL || "hammambinasraful@gmail.com";
+    const adminPassword = process.env.ADMIN_PASSWORD || "12345678";
 
-    // Remove existing admin if any
-    await User.deleteMany({ email: adminEmail });
-
-    // Create fresh Super Admin user with full permissions
-    const admin = await User.create({
-      name: "Master Perfumer & Admin",
-      email: adminEmail,
-      password: adminPassword, // Pre-save hook will hash with bcrypt
-      phone: "+91 98765 43210",
-      role: "superadmin",
-      isVerified: true,
-      isActive: true,
-      referralCode: "POLLENADMIN",
-      loyaltyPoints: 10000,
-      loyaltyTier: "platinum",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-      permissions: [
+    let admin = await User.findOne({ email: adminEmail });
+    if (admin) {
+      admin.name = "Hammam & Admin";
+      admin.password = adminPassword;
+      admin.role = "superadmin";
+      admin.isVerified = true;
+      admin.isActive = true;
+      admin.phone = "+91 98765 43210";
+      admin.permissions = [
         "all",
         "orders:read",
         "orders:write",
@@ -50,9 +42,39 @@ async function seedAdmin() {
         "shipping:manage",
         "analytics:view",
         "settings:manage",
-      ],
-      lastLogin: new Date(),
-    });
+      ];
+      await admin.save();
+    } else {
+      const referralCode = `HAMMAM_${Date.now().toString(36).toUpperCase()}`;
+      admin = await User.create({
+        name: "Hammam & Admin",
+        email: adminEmail,
+        password: adminPassword,
+        phone: "+91 98765 43210",
+        role: "superadmin",
+        isVerified: true,
+        isActive: true,
+        referralCode,
+        loyaltyPoints: 10000,
+        loyaltyTier: "platinum",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+        permissions: [
+          "all",
+          "orders:read",
+          "orders:write",
+          "products:read",
+          "products:write",
+          "users:read",
+          "users:write",
+          "returns:manage",
+          "coupons:manage",
+          "shipping:manage",
+          "analytics:view",
+          "settings:manage",
+        ],
+        lastLogin: new Date(),
+      });
+    }
 
     console.log("\n================================================");
     console.log("✨ Admin profile seeded successfully in MongoDB!");

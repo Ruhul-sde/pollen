@@ -620,20 +620,29 @@ export async function adminLogin(req, res, next) {
 /** Initialize default admin on startup */
 export async function initAdminUser() {
   try {
-    const existing = await User.findOne({ role: { $in: [ROLES.ADMIN, ROLES.SUPERADMIN] } });
-    if (existing) return;
+    const adminEmail = (process.env.ADMIN_EMAIL || "hammambinasraful@gmail.com").toLowerCase().trim();
+    const adminPassword = process.env.ADMIN_PASSWORD || "12345678";
 
-    await User.create({
-      name: "Admin",
-      email: process.env.ADMIN_EMAIL || "admin@pollen.com",
-      password: process.env.ADMIN_PASSWORD || "admin123",
-      role: ROLES.SUPERADMIN,
-      isVerified: true,
-      isActive: true,
-      referralCode: "ADMIN000",
-    });
-
-    console.log("[Auth] Default admin created: admin@pollen.com / admin123");
+    let admin = await User.findOne({ email: adminEmail });
+    if (!admin) {
+      await User.create({
+        name: "Admin",
+        email: adminEmail,
+        password: adminPassword,
+        role: ROLES.SUPERADMIN,
+        isVerified: true,
+        isActive: true,
+        referralCode: "ADMIN000",
+      });
+      console.log(`[Auth] Default admin created: ${adminEmail}`);
+    } else {
+      admin.role = ROLES.SUPERADMIN;
+      admin.isVerified = true;
+      admin.isActive = true;
+      admin.password = adminPassword;
+      await admin.save();
+      console.log(`[Auth] Admin updated: ${adminEmail}`);
+    }
   } catch (err) {
     console.error("[Auth] Failed to init admin:", err.message);
   }

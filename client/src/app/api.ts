@@ -3,7 +3,7 @@
  */
 
 // Backend API base URL
-const API_BASE_URL = "http://localhost:5001/api";
+const API_BASE_URL = "https://pollen-server.jxdww2.easypanel.host/api";
 
 export interface ServerHealthResponse {
   success: boolean;
