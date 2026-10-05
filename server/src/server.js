@@ -20,16 +20,31 @@ const PORT = process.env.PORT || 3000;
 const ENV = process.env.NODE_ENV || "development";
 
 async function bootstrap() {
-  // Start Express server immediately (bind to 0.0.0.0 for Docker / network access)
-  // This ensures health checks and reverse proxy endpoints respond immediately
-  const server = app.listen(PORT, "0.0.0.0", () => {
-    logger.info("========================================");
-    logger.info(`🚀 Pollen Server running on port ${PORT}`);
-    logger.info(`   Local:        http://localhost:${PORT}/api/health`);
-    logger.info(`   Network:      http://0.0.0.0:${PORT}/api/health`);
-    logger.info(`   Environment:  ${ENV}`);
-    logger.info("========================================");
-  });
+  const primaryPort = Number(process.env.PORT) || 3000;
+  const candidatePorts = Array.from(new Set([primaryPort, 3000, 5000]));
+  const activeServers = [];
+
+  for (const port of candidatePorts) {
+    try {
+      const s = app.listen(port, "0.0.0.0", () => {
+        logger.info("========================================");
+        logger.info(`🚀 Pollen Server running on port ${port}`);
+        logger.info(`   Local:        http://localhost:${port}/api/health`);
+        logger.info(`   Network:      http://0.0.0.0:${port}/api/health`);
+        logger.info(`   Environment:  ${ENV}`);
+        logger.info("========================================");
+      });
+
+      s.on("error", (err) => {
+        if (err.code === "EADDRINUSE" || err.code === "EACCES") return;
+        logger.warn(`[Server] Port ${port} notice: ${err.message}`);
+      });
+
+      activeServers.push(s);
+    } catch {
+      // ignore
+    }
+  }
 
   // Connect to MongoDB & initialize data services in background
   try {
@@ -52,33 +67,26 @@ async function bootstrap() {
 
     logger.info(`[Server] ${signal} received — shutting down gracefully...`);
 
-    // Give in-flight requests up to 10 s to finish
-    const forceExit = setTimeout(() => {
-      logger.error("[Server] Graceful shutdown timed out — forcing exit");
-      process.exit(1);
-    }, 10_000);
-    forceExit.unref();
-
-    // Stop accepting new connections
-    server.close(async () => {
-      logger.info("[Server] HTTP server closed");
-
-      // Close MongoDB connection cleanly
+    // Stop accepting new connections on all active ports
+    activeServers.forEach((s) => {
       try {
-        await mongoose.connection.close(false);
-        logger.info("[Server] MongoDB connection closed");
-      } catch (err) {
-        logger.error("[Server] Error closing MongoDB:", { error: err.message });
-      }
-
-      logger.info("[Server] Shutdown complete");
-      process.exit(0);
+        if (typeof s.closeIdleConnections === "function") {
+          s.closeIdleConnections();
+        }
+        s.close();
+      } catch {}
     });
 
-    // Close idle keep-alive sockets immediately so server.close doesn't hang
-    if (typeof server.closeIdleConnections === "function") {
-      server.closeIdleConnections();
+    // Close MongoDB connection cleanly
+    try {
+      await mongoose.connection.close(false);
+      logger.info("[Server] MongoDB connection closed");
+    } catch (err) {
+      logger.error("[Server] Error closing MongoDB:", { error: err.message });
     }
+
+    logger.info("[Server] Shutdown complete");
+    process.exit(0);
   };
 
   process.on("SIGTERM", () => shutdown("SIGTERM"));

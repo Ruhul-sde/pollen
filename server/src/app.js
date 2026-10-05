@@ -123,14 +123,44 @@ if (!isProd) {
 // ── Static uploads serving ────────────────────────────────────────────────
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
-// ── Root endpoint for reverse proxy / health checks ───────────────────────
+// ── Root endpoint for reverse proxy / browser checks ─────────────────────
 app.get("/", (req, res) => {
+  if (req.accepts("html")) {
+    return res.status(200).send(`<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pollen API Server</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0a0a0a; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+      .card { background: #171717; border: 1px solid #262626; padding: 2.5rem; border-radius: 1rem; text-align: center; max-width: 440px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+      h1 { font-size: 1.5rem; margin: 0.75rem 0 0.5rem; color: #22c55e; }
+      p { color: #a3a3a3; font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.5; }
+      .badge { display: inline-block; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+      a { color: #f59e0b; text-decoration: none; font-size: 0.85rem; font-weight: 500; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <span class="badge">&#9679; Live &amp; Operational</span>
+      <h1>Server is Running</h1>
+      <p>Pollen Node.js &amp; MongoDB backend is healthy and responding.</p>
+      <a href="/api/health">View /api/health status &rarr;</a>
+    </div>
+  </body>
+</html>`);
+  }
+
   res.status(200).json({
     success: true,
-    message: "Pollen API Server is running",
+    message: "Server is running",
     environment: process.env.NODE_ENV || "development",
     health: "/api/health",
   });
+});
+
+app.get(["/health", "/healthz", "/ping"], (req, res) => {
+  res.status(200).json({ status: "ok", message: "Server is running" });
 });
 
 // ── Routes (versioned under /api/v1) ──────────────────────────────────────
