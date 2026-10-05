@@ -3,21 +3,8 @@
  * Replaces legacy Supabase with native Node.js Express & MongoDB backend.
  */
 
-const getApiBaseUrl = () => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl && envUrl.startsWith("http") && !envUrl.includes("localhost")) {
-    return envUrl;
-  }
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    if (host !== "localhost" && host !== "127.0.0.1") {
-      return "/api";
-    }
-  }
-  return envUrl || "/api";
-};
-
-const API_BASE_URL = getApiBaseUrl();
+// Hardcoded production backend API base URL
+const API_BASE_URL = "https://pollen-server.jxdww2.easypanel.host/api";
 
 export const PAYMENT_API_BASE_URL = `${API_BASE_URL}/payments`;
 export const PAYMENT_ORDER_URL = `${PAYMENT_API_BASE_URL}/create-order`;

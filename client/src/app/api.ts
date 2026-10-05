@@ -2,21 +2,8 @@
  * API Client for Pollen Node.js Backend Server
  */
 
-const getApiBaseUrl = () => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl && envUrl.startsWith("http") && !envUrl.includes("localhost")) {
-    return envUrl;
-  }
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    if (host !== "localhost" && host !== "127.0.0.1") {
-      return "/api";
-    }
-  }
-  return envUrl || "/api";
-};
-
-const API_BASE_URL = getApiBaseUrl();
+// Hardcoded production backend API base URL
+const API_BASE_URL = "https://pollen-server.jxdww2.easypanel.host/api";
 
 export interface ServerHealthResponse {
   success: boolean;

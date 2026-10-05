@@ -32,76 +32,52 @@ const isProd = process.env.NODE_ENV === "production";
 // ── Trust reverse proxy (Docker, Nginx, Cloudflare) ────────────────────────
 app.set("trust proxy", 1);
 
+// ── CORS (Allow all origins & methods) ─────────────────────────────────────
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Reflect request origin to allow all origins with credentials: true
+    callback(null, true);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+    "x-razorpay-signature",
+    "baggage",
+    "sentry-trace",
+  ],
+  exposedHeaders: ["Content-Range", "X-Content-Range"],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+// Explicit CORS header fallback to guarantee headers on all responses and preflights
+app.use((req, res, next) => {
+  const origin = req.headers.origin || "*";
+  res.header("Access-Control-Allow-Origin", origin);
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, x-razorpay-signature, baggage, sentry-trace");
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
+
 // ── Security headers (Helmet) ──────────────────────────────────────────────
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    // Enable CSP in production; off in dev for hot-reload compatibility
-    contentSecurityPolicy: isProd
-      ? {
-          directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-            connectSrc: ["'self'", "https://pollenstore.in", "https://api.razorpay.com"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            objectSrc: ["'none'"],
-            upgradeInsecureRequests: [],
-          },
-        }
-      : false,
+    contentSecurityPolicy: false,
     hsts: isProd
       ? { maxAge: 31536000, includeSubDomains: true, preload: true }
       : false,
-  })
-);
-
-// ── CORS ───────────────────────────────────────────────────────────────────
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://192.168.1.2:3000",
-  "https://pollenstore.in",
-  "https://www.pollenstore.in",
-].filter(Boolean);
-
-const isAllowedOrigin = (origin) => {
-  if (!origin) return true;
-  // In development, permit all origins
-  if (!isProd) return true;
-  if (allowedOrigins.includes(origin)) return true;
-  try {
-    const { hostname } = new URL(origin);
-    if (
-      hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
-      hostname.startsWith("192.168.") ||
-      hostname.startsWith("10.") ||
-      hostname.startsWith("172.") ||
-      hostname.endsWith(".local")
-    ) {
-      return true;
-    }
-  } catch {}
-  return false;
-};
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (isAllowedOrigin(origin)) {
-        callback(null, true);
-      } else {
-        callback(null, false);
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-razorpay-signature"],
   })
 );
 

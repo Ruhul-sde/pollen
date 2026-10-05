@@ -25,17 +25,12 @@ export function validateEnv() {
   }
 
   if (process.env.NODE_ENV === "production") {
-    for (const key of REQUIRED_IN_PROD) {
-      if (!process.env[key]) missing.push(key);
+    const missingProd = REQUIRED_IN_PROD.filter((k) => !process.env[k]);
+    if (missingProd.length > 0) {
+      console.warn(
+        `\n[ENV] ⚠️ Warning: Missing recommended production environment variables:\n` +
+          missingProd.map((k) => `  • ${k}`).join("\n")
+      );
     }
-  }
-
-  if (missing.length > 0) {
-    console.error(
-      `\n[ENV] ❌ Missing required environment variables:\n` +
-        missing.map((k) => `  • ${k}`).join("\n") +
-        `\n\nCopy server/.env.example to server/.env and fill in the values.\n`
-    );
-    process.exit(1);
   }
 }

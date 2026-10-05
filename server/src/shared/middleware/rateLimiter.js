@@ -6,6 +6,7 @@ const createLimiter = (windowMs, max, message) =>
     max,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.method === "OPTIONS",
     message: { success: false, message },
     validate: { xForwardedForHeader: false },
   });
