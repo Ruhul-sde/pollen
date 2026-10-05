@@ -8,7 +8,7 @@ services:
     container_name: pollen-server
     restart: unless-stopped
     ports:
-      - "${PORT:-5001}:${PORT:-5001}"
+      - "${PORT:-3000}:${PORT:-3000}"
     env_file:
       - ./server/.env
     environment:
@@ -17,7 +17,7 @@ services:
       # Persist local uploads (Cloudinary is preferred in production)
       - uploads_data:/app/uploads
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:${PORT:-5001}/api/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:${PORT:-3000}/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3

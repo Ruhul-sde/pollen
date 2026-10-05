@@ -70,6 +70,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// Normalize any accidental double /api/api prefix
+app.use((req, res, next) => {
+  if (req.url.startsWith("/api/api/")) {
+    req.url = req.url.replace(/^\/api\/api\//, "/api/");
+  }
+  next();
+});
+
 // ── Security headers (Helmet) ──────────────────────────────────────────────
 app.use(
   helmet({

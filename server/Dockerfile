@@ -32,8 +32,10 @@ RUN mkdir -p uploads && chown pollen:pollen uploads
 
 USER pollen
 
-# Expose API port
-EXPOSE 5000
+# Port — Easypanel injects PORT automatically; default to 3000 for cloud deployments
+ARG PORT=3000
+ENV PORT=${PORT}
+EXPOSE ${PORT}
 
 ENV NODE_ENV=production
 
