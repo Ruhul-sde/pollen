@@ -2,8 +2,8 @@
  * API Client for Pollen Node.js Backend Server
  */
 
-// Hardcoded production backend API base URL
-const API_BASE_URL = "https://pollen-server.jxdww2.easypanel.host/api";
+// Backend API base URL
+const API_BASE_URL = "http://localhost:5001/api";
 
 export interface ServerHealthResponse {
   success: boolean;
