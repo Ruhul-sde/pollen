@@ -21,7 +21,7 @@ const ENV = process.env.NODE_ENV || "development";
 
 async function bootstrap() {
   const primaryPort = Number(process.env.PORT) || 3000;
-  const candidatePorts = Array.from(new Set([primaryPort, 3000, 5000]));
+  const candidatePorts = Array.from(new Set([primaryPort, 3000, 5000, 80]));
   const activeServers = [];
 
   for (const port of candidatePorts) {

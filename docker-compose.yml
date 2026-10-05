@@ -3,7 +3,7 @@ version: "3.9"
 services:
   server:
     build:
-      context: ./server
+      context: .
       dockerfile: Dockerfile
     container_name: pollen-server
     restart: unless-stopped
@@ -16,12 +16,6 @@ services:
     volumes:
       # Persist local uploads (Cloudinary is preferred in production)
       - uploads_data:/app/uploads
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:${PORT:-3000}/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
 
 volumes:
   uploads_data:

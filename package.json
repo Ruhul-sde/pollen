@@ -2,7 +2,11 @@
   "name": "pollen-project",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "server"
+  ],
   "scripts": {
+    "postinstall": "npm --prefix server install",
     "start": "npm start --prefix server",
     "server": "npm run dev --prefix server",
     "client": "npm run dev --prefix client",
