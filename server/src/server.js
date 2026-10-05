@@ -20,19 +20,8 @@ const PORT = process.env.PORT || 5000;
 const ENV = process.env.NODE_ENV || "development";
 
 async function bootstrap() {
-  // Connect to MongoDB
-  await connectDB();
-
-  // Ensure default admin user exists
-  await initAdminUser();
-
-  // Ensure catalog products exist in MongoDB
-  await autoSeedProducts();
-
-  // Ensure default store settings & dynamic features exist
-  await initDefaultSettings();
-
-  // Start Express server (bind to 0.0.0.0 for Docker / network access)
+  // Start Express server immediately (bind to 0.0.0.0 for Docker / network access)
+  // This ensures health checks and reverse proxy endpoints respond immediately
   const server = app.listen(PORT, "0.0.0.0", () => {
     logger.info("========================================");
     logger.info(`🚀 Pollen Server running on port ${PORT}`);
@@ -41,6 +30,18 @@ async function bootstrap() {
     logger.info(`   Environment:  ${ENV}`);
     logger.info("========================================");
   });
+
+  // Connect to MongoDB & initialize data services in background
+  try {
+    await connectDB();
+    await initAdminUser();
+    await autoSeedProducts();
+    await initDefaultSettings();
+  } catch (initErr) {
+    logger.warn("[Server] Background database initialization warning:", {
+      error: initErr.message,
+    });
+  }
 
   // ── Graceful shutdown ──────────────────────────────────────────────────────
   let isShuttingDown = false;
