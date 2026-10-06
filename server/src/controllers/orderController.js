@@ -453,6 +453,8 @@ export async function getOrders(req, res, next) {
             ? o.deliveryAddress
             : [o.deliveryAddress?.line1, o.deliveryAddress?.city, o.deliveryAddress?.state, o.deliveryAddress?.pincode].filter(Boolean).join(", "),
           status: o.status,
+          paymentStatus: o.paymentStatus || (o.status === "pending" ? "pending" : "paid"),
+          payment_status: o.paymentStatus || (o.status === "pending" ? "pending" : "paid"),
           totalAmount: o.total,
           total: o.total,
           createdAt: o.createdAt,
@@ -709,8 +711,27 @@ export async function cancelOrder(req, res, next) {
 /** GET /api/v1/orders/:id/invoice */
 export async function downloadInvoice(req, res, next) {
   try {
-    const order = await Order.findOne({ _id: req.params.id, userId: req.user.id }).lean();
+    const order = await Order.findOne({
+      $or: [
+        mongoose.isValidObjectId(req.params.id) ? { _id: req.params.id } : null,
+        { orderId: req.params.id },
+      ].filter(Boolean),
+      userId: req.user.id,
+    }).lean();
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+    // Invoices are only generated / available after payment is completed
+    if (
+      order.status === ORDER_STATUS.PENDING ||
+      order.status === "pending" ||
+      order.paymentStatus === PAYMENT_STATUS.PENDING ||
+      order.paymentStatus === "pending"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invoice is only available after payment has been completed.",
+      });
+    }
 
     let invoice = await Invoice.findOne({ orderId: order._id }).lean();
 

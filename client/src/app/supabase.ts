@@ -83,6 +83,8 @@ export type Order = {
   delivery_phone: string | null;
   delivery_address: string | null;
   status: string;
+  payment_status?: string | null;
+  paymentStatus?: string | null;
   total_amount: number | null;
   created_at: string;
   coupon_code?: string | null;
@@ -408,6 +410,8 @@ export async function getOrdersByUser(userId: string): Promise<Order[]> {
       delivery_phone: o.deliveryPhone || null,
       delivery_address: o.deliveryAddress || null,
       status: o.status,
+      payment_status: o.payment_status || o.paymentStatus || (o.status === "pending" ? "pending" : "paid"),
+      paymentStatus: o.paymentStatus || o.payment_status || (o.status === "pending" ? "pending" : "paid"),
       total_amount: o.totalAmount,
       created_at: o.createdAt,
     };

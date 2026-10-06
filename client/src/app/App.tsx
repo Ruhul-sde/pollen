@@ -1246,7 +1246,11 @@ export default function App() {
   };
 
   const handleDeletePendingOrder = async (orderId: string) => {
-    if (!user) return;
+    if (!user?.id) {
+      toast.error("Please sign in to delete this order.");
+      return;
+    }
+
     try {
       await deleteOrder(user.id, orderId);
       setOrderHistory((orders) => orders.filter((order) => order.id !== orderId));

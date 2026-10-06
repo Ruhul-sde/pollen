@@ -36,6 +36,8 @@ export type OrderRecord = {
   carrier?: string;
   consignment_number?: string;
   status: string;
+  payment_status?: string | null;
+  paymentStatus?: string | null;
   total_amount: number | null;
   created_at: string;
   title?: string;
@@ -116,7 +118,7 @@ export function MyOrdersSection({
       if (filterStatus === "delivered" && statusLower !== "delivered") return false;
       if (
         filterStatus === "active" &&
-        (statusLower === "delivered" || statusLower === "cancelled")
+        !["confirmed", "paid", "processing", "shipped", "out_for_delivery"].includes(statusLower)
       ) {
         return false;
       }
@@ -255,7 +257,9 @@ export function MyOrdersSection({
                 id: "active",
                 label: "In Progress",
                 count: orders.filter((o) =>
-                  ["pending", "paid", "processing", "shipped"].includes(o.status.toLowerCase()),
+                  ["confirmed", "paid", "processing", "shipped", "out_for_delivery"].includes(
+                    o.status.toLowerCase()
+                  ),
                 ).length,
               },
               {
@@ -375,12 +379,13 @@ export function MyOrdersSection({
           ) : (
             filteredOrders.map((order) => {
               const statusBadge = getStatusBadge(order.status);
-              const isDelivered = order.status.toLowerCase() === "delivered";
-              const isPaid = order.status.toLowerCase() === "paid";
-              const isPending = order.status.toLowerCase() === "pending";
-              const isShipped = ["shipped", "out_for_delivery", "delivered"].includes(
-                order.status.toLowerCase()
-              );
+              const statusLower = (order.status || "").toLowerCase();
+              const isDelivered = statusLower === "delivered";
+              const isShipped = ["shipped", "out_for_delivery", "delivered"].includes(statusLower);
+              const isConfirmed = ["confirmed", "processing", "paid", "shipped", "out_for_delivery", "delivered"].includes(statusLower);
+              const isPending = statusLower === "pending";
+              const isCancelled = statusLower === "cancelled";
+              const isPaid = statusLower === "paid" || isConfirmed;
               const hasTracking = Boolean(order.tracking_id && order.tracking_id.trim() && isShipped);
 
               return (
@@ -451,19 +456,42 @@ export function MyOrdersSection({
                   {/* 4-Stage Visual Delivery Progression Bar */}
                   <div className="rounded-2xl bg-neutral-50 dark:bg-neutral-800/40 p-4 border border-black/5 dark:border-neutral-800/70">
                     <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                      <div className="flex flex-col items-center gap-1.5">
-                        <span className="h-1.5 w-full rounded-full bg-emerald-500" />
-                        <span className="text-emerald-700 dark:text-emerald-400">1. Order Placed</span>
-                      </div>
+                      {/* Step 1: Order Placed / Payment Pending */}
                       <div className="flex flex-col items-center gap-1.5">
                         <span
                           className={`h-1.5 w-full rounded-full ${
-                            isPaid || isShipped || isDelivered ? "bg-emerald-500" : "bg-neutral-200 dark:bg-neutral-700"
+                            isPending
+                              ? "bg-amber-400 animate-pulse"
+                              : isCancelled
+                              ? "bg-rose-400"
+                              : "bg-emerald-500"
                           }`}
                         />
                         <span
                           className={
-                            isPaid || isShipped || isDelivered
+                            isPending
+                              ? "text-amber-700 dark:text-amber-400 font-semibold"
+                              : isCancelled
+                              ? "text-rose-700 dark:text-rose-400 font-semibold"
+                              : "text-emerald-700 dark:text-emerald-400"
+                          }
+                        >
+                          {isPending ? "1. Payment Pending" : isCancelled ? "1. Cancelled" : "1. Order Placed"}
+                        </span>
+                      </div>
+
+                      {/* Step 2: Confirmed */}
+                      <div className="flex flex-col items-center gap-1.5">
+                        <span
+                          className={`h-1.5 w-full rounded-full ${
+                            isConfirmed && !isPending && !isCancelled
+                              ? "bg-emerald-500"
+                              : "bg-neutral-200 dark:bg-neutral-700"
+                          }`}
+                        />
+                        <span
+                          className={
+                            isConfirmed && !isPending && !isCancelled
                               ? "text-emerald-700 dark:text-emerald-400"
                               : "text-neutral-400 dark:text-neutral-500"
                           }
@@ -471,27 +499,43 @@ export function MyOrdersSection({
                           2. Confirmed
                         </span>
                       </div>
+
+                      {/* Step 3: Dispatched */}
                       <div className="flex flex-col items-center gap-1.5">
                         <span
                           className={`h-1.5 w-full rounded-full ${
-                            isShipped || isDelivered ? "bg-emerald-500" : "bg-neutral-200 dark:bg-neutral-700"
+                            isShipped && !isPending && !isCancelled
+                              ? "bg-emerald-500"
+                              : "bg-neutral-200 dark:bg-neutral-700"
                           }`}
                         />
                         <span
                           className={
-                            isShipped || isDelivered ? "text-emerald-700 dark:text-emerald-400" : "text-neutral-400 dark:text-neutral-500"
+                            isShipped && !isPending && !isCancelled
+                              ? "text-emerald-700 dark:text-emerald-400"
+                              : "text-neutral-400 dark:text-neutral-500"
                           }
                         >
                           3. Dispatched
                         </span>
                       </div>
+
+                      {/* Step 4: Delivered */}
                       <div className="flex flex-col items-center gap-1.5">
                         <span
                           className={`h-1.5 w-full rounded-full ${
-                            isDelivered ? "bg-emerald-500" : "bg-neutral-200 dark:bg-neutral-700"
+                            isDelivered && !isPending && !isCancelled
+                              ? "bg-emerald-500"
+                              : "bg-neutral-200 dark:bg-neutral-700"
                           }`}
                         />
-                        <span className={isDelivered ? "text-emerald-700 dark:text-emerald-400" : "text-neutral-400 dark:text-neutral-500"}>
+                        <span
+                          className={
+                            isDelivered && !isPending && !isCancelled
+                              ? "text-emerald-700 dark:text-emerald-400"
+                              : "text-neutral-400 dark:text-neutral-500"
+                          }
+                        >
                           4. Delivered
                         </span>
                       </div>
@@ -562,6 +606,16 @@ export function MyOrdersSection({
                           <Truck size={13} />
                           <span>Live Tracking</span>
                         </button>
+                      ) : isPending ? (
+                        <div className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-amber-300 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20 px-3 py-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                          <Clock size={12} className="text-amber-500" />
+                          <span>Awaiting Payment</span>
+                        </div>
+                      ) : isCancelled ? (
+                        <div className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-rose-300 dark:border-rose-800/60 bg-rose-50/50 dark:bg-rose-950/20 px-3 py-1.5 text-[11px] font-medium text-rose-700 dark:text-rose-400">
+                          <X size={12} className="text-rose-500" />
+                          <span>Order Cancelled</span>
+                        </div>
                       ) : (
                         <div className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
                           <Clock size={12} className="text-amber-500" />
@@ -569,15 +623,17 @@ export function MyOrdersSection({
                         </div>
                       )}
 
-                      {/* View / Print Invoice Button */}
-                      <button
-                        type="button"
-                        onClick={() => setActiveInvoiceOrder(order)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-black/15 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-black dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
-                      >
-                        <FileText size={13} />
-                        <span>View Invoice</span>
-                      </button>
+                      {/* View / Print Invoice Button - Only available once payment is complete */}
+                      {!isPending && !isCancelled && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveInvoiceOrder(order)}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-black/15 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-black dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
+                        >
+                          <FileText size={13} />
+                          <span>View Invoice</span>
+                        </button>
+                      )}
 
                       {/* Need Help Email Link */}
                       <a
@@ -855,7 +911,8 @@ export function MyOrdersSection({
 
       {/* 2. Official Printable Invoice / Receipt Modal */}
       <AnimatePresence>
-        {activeInvoiceOrder && (
+        {activeInvoiceOrder &&
+          !["pending", "cancelled"].includes((activeInvoiceOrder.status || "").toLowerCase()) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
