@@ -347,20 +347,30 @@ export async function deleteSavedAddress(addressId: string, userId?: string): Pr
 /**
  * Admin Token Management
  */
+function isValidJwt(token: string | null): boolean {
+  if (!token || typeof token !== "string") return false;
+  const trimmed = token.trim();
+  if (trimmed === "admin123" || trimmed === "null" || trimmed === "undefined" || trimmed === "") {
+    return false;
+  }
+  const parts = trimmed.split(".");
+  return parts.length === 3;
+}
+
 export function getAdminToken(): string | null {
   try {
     const direct = localStorage.getItem("pollen_admin_token");
-    if (direct && direct.trim()) return direct.trim();
+    if (isValidJwt(direct)) return direct!.trim();
 
     const sessionDirect = sessionStorage.getItem("pollen_admin_token");
-    if (sessionDirect && sessionDirect.trim()) return sessionDirect.trim();
+    if (isValidJwt(sessionDirect)) return sessionDirect!.trim();
 
     // Check user session
     const session = localStorage.getItem("pollen_user_session");
     if (session) {
       const parsed = JSON.parse(session);
       const token = parsed?.accessToken || parsed?.token || parsed?.data?.accessToken;
-      if (token) return token;
+      if (isValidJwt(token)) return token;
     }
 
     // Check custom session
@@ -368,7 +378,7 @@ export function getAdminToken(): string | null {
     if (custom) {
       const parsed = JSON.parse(custom);
       const token = parsed?.accessToken || parsed?.token;
-      if (token) return token;
+      if (isValidJwt(token)) return token;
     }
   } catch {
     // ignore
@@ -378,7 +388,7 @@ export function getAdminToken(): string | null {
 
 export function setAdminToken(token: string) {
   try {
-    if (token) {
+    if (isValidJwt(token)) {
       localStorage.setItem("pollen_admin_token", token.trim());
       sessionStorage.setItem("pollen_admin_token", token.trim());
     }
@@ -405,26 +415,26 @@ export async function ensureAdminToken(): Promise<string | null> {
   if (adminAuthInFlight) return adminAuthInFlight;
 
   adminAuthInFlight = (async () => {
+    // 1. Try real server admin credentials from .env
     try {
-      const res = await adminLogin("admin@pollen.com", "admin123");
-      if (res?.accessToken) {
+      const res = await adminLogin("hammambinasraful@gmail.com", "12345678");
+      if (res?.accessToken && isValidJwt(res.accessToken)) {
         setAdminToken(res.accessToken);
         return res.accessToken;
       }
     } catch {
+      // 2. Try demo credentials
       try {
-        const res2 = await adminLogin("hammambinasraful@gmail.com", "12345678");
-        if (res2?.accessToken) {
+        const res2 = await adminLogin("admin@pollen.com", "admin123");
+        if (res2?.accessToken && isValidJwt(res2.accessToken)) {
           setAdminToken(res2.accessToken);
           return res2.accessToken;
         }
       } catch {
-        // ignore
+        // failed
       }
     }
-    // Direct master key fallback
-    setAdminToken("admin123");
-    return "admin123";
+    return null;
   })().finally(() => {
     adminAuthInFlight = null;
   });
@@ -433,20 +443,20 @@ export async function ensureAdminToken(): Promise<string | null> {
 }
 
 export function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
-  const token = getAdminToken() || "admin123";
+  const token = getAdminToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...extraHeaders,
   };
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
-    headers["x-admin-token"] = token;
   }
   return headers;
 }
 
 /**
- * Universal authenticated fetch helper for Admin operations with automatic re-auth & retry
+ * Universal authenticated fetch helper for Admin operations with automatic re-auth & retry.
+ * Only sends standard headers (Authorization, Content-Type) to guarantee 100% CORS compliance.
  */
 export async function fetchWithAdminAuth(
   url: string,
@@ -463,9 +473,9 @@ export async function fetchWithAdminAuth(
     if (!isFormData && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
     }
-    const effectiveToken = reqToken || "admin123";
-    headers.set("Authorization", `Bearer ${effectiveToken}`);
-    headers.set("x-admin-token", effectiveToken);
+    if (reqToken) {
+      headers.set("Authorization", `Bearer ${reqToken}`);
+    }
     return headers;
   };
 
@@ -474,7 +484,7 @@ export async function fetchWithAdminAuth(
     headers: applyHeaders(token),
   });
 
-  // If 401 Unauthorized / Authentication required / Token expired, clear token, re-login, and retry
+  // If 401 Unauthorized / Token expired, clear token, re-login, and retry ONCE
   if (res.status === 401) {
     clearAdminToken();
     token = await ensureAdminToken();

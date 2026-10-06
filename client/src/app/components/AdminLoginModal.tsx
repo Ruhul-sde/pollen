@@ -10,8 +10,8 @@ interface AdminLoginModalProps {
 }
 
 export function AdminLoginModal({ open, onClose, onSuccess }: AdminLoginModalProps) {
-  const [email, setEmail] = useState("admin@pollen.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("hammambinasraful@gmail.com");
+  const [password, setPassword] = useState("12345678");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -34,8 +34,8 @@ export function AdminLoginModal({ open, onClose, onSuccess }: AdminLoginModalPro
   };
 
   const fillDemo = () => {
-    setEmail("admin@pollen.com");
-    setPassword("admin123");
+    setEmail("hammambinasraful@gmail.com");
+    setPassword("12345678");
     setError("");
   };
 
@@ -85,7 +85,7 @@ export function AdminLoginModal({ open, onClose, onSuccess }: AdminLoginModalPro
           {/* Quick Demo Credentials Pill */}
           <div className="mt-4 flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
             <div className="text-[11px] text-neutral-300">
-              <span className="text-neutral-500 font-mono">Demo:</span> admin@pollen.com / admin123
+              <span className="text-neutral-500 font-mono">Admin:</span> hammambinasraful@gmail.com / 12345678
             </div>
             <button
               type="button"
