@@ -63,6 +63,8 @@ export function TopBar({
   onOpenHome,
   onOpenAbout,
   onOpenGiftSet,
+  onOpenFragrances,
+  onOpenTrackOrder,
   showTrackOrder = true,
   cartCount,
   onCartOpen,
@@ -78,6 +80,8 @@ export function TopBar({
   onOpenHome: () => void;
   onOpenAbout?: () => void;
   onOpenGiftSet?: () => void;
+  onOpenFragrances?: () => void;
+  onOpenTrackOrder?: () => void;
   showTrackOrder?: boolean;
   cartCount: number;
   onCartOpen: () => void;
@@ -219,8 +223,17 @@ export function TopBar({
               </button>
             )}
             <a
-              href="#fragrances"
-              className={`text-[11px] font-semibold uppercase tracking-[0.2em] transition-colors ${
+              href="#shop-collection"
+              onClick={(e) => {
+                e.preventDefault();
+                if (onOpenFragrances) {
+                  onOpenFragrances();
+                } else {
+                  const el = document.getElementById("shop-collection");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+              className={`text-[11px] font-semibold uppercase tracking-[0.2em] transition-colors cursor-pointer ${
                 isDark ? "text-white/80 hover:text-white" : "text-black/70 hover:text-black"
               }`}
             >
@@ -229,7 +242,16 @@ export function TopBar({
             {showTrackOrder && (
               <a
                 href="#track"
-                className={`text-[11px] font-semibold uppercase tracking-[0.2em] transition-colors ${
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (onOpenTrackOrder) {
+                    onOpenTrackOrder();
+                  } else {
+                    const el = document.getElementById("track");
+                    if (el) el.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
+                className={`text-[11px] font-semibold uppercase tracking-[0.2em] transition-colors cursor-pointer ${
                   isDark ? "text-white/80 hover:text-white" : "text-black/70 hover:text-black"
                 }`}
               >
@@ -489,6 +511,8 @@ export function SideMenu({
   onOpenHome,
   onOpenAbout,
   onOpenFragrance,
+  onOpenFragrances,
+  onOpenTrackOrder,
   user,
   onLogin,
   onProfileSettings,
@@ -505,6 +529,8 @@ export function SideMenu({
   onOpenHome: () => void;
   onOpenAbout?: () => void;
   onOpenFragrance: (id: number) => void;
+  onOpenFragrances?: () => void;
+  onOpenTrackOrder?: () => void;
   user: { name: string; email: string; role?: string } | null;
   onLogin: () => void;
   onProfileSettings: () => void;
@@ -749,8 +775,18 @@ export function SideMenu({
                 {NAV_ITEMS.filter((item) => item.label === "SHOP").map((item) => (
                   <motion.div key={item.label} variants={itemVariants}>
                     <a
-                      href={item.href}
-                      onClick={onClose}
+                      href="#shop-collection"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onClose();
+                        if (onOpenFragrances) {
+                          onOpenFragrances();
+                        } else {
+                          const el = document.getElementById("shop-collection");
+                          if (el) el.scrollIntoView({ behavior: "smooth" });
+                          else onOpenHome();
+                        }
+                      }}
                       className="w-full flex items-center justify-between py-3 px-2 rounded-xl text-left text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-all group cursor-pointer"
                       style={{ textDecoration: "none" }}
                     >
@@ -843,7 +879,17 @@ export function SideMenu({
                 <motion.div variants={itemVariants}>
                   <a
                     href="#track"
-                    onClick={onClose}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onClose();
+                      if (onOpenTrackOrder) {
+                        onOpenTrackOrder();
+                      } else {
+                        const el = document.getElementById("track");
+                        if (el) el.scrollIntoView({ behavior: "smooth" });
+                        else onOpenHome();
+                      }
+                    }}
                     className="w-full flex items-center justify-between py-3 px-2 rounded-xl text-left text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-all group cursor-pointer"
                     style={{ textDecoration: "none" }}
                   >

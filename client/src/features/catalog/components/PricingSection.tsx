@@ -71,7 +71,10 @@ export function PricingSection({
   if (pricingCards.length === 0) return null;
 
   return (
-    <section className="bg-black px-4 py-14 text-white sm:px-6 md:px-10 md:py-20">
+    <section
+      id="shop-collection"
+      className="bg-black px-4 py-14 text-white sm:px-6 md:px-10 md:py-20 scroll-mt-20 sm:scroll-mt-24"
+    >
       <div className="mx-auto max-w-screen-2xl">
         <h2 className="mb-10 text-center text-2xl font-medium uppercase tracking-[0.08em] sm:text-3xl md:mb-14 md:text-4xl">
           Shop the collection

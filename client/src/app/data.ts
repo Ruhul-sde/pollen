@@ -4,7 +4,7 @@ import pollen3 from "./Images/3e.jpg";
 import giftSetHero from "./Images/4a.PNG";
 
 export const NAV_ITEMS = [
-  { label: "SHOP", href: "/collection" },
+  { label: "SHOP", href: "#shop-collection" },
   { label: "GET YOUR BUNDLE", href: "/gift-set" },
   { label: "KNOW POLLEN", href: "/" },
   { label: "TRACK ORDER", href: "#track" },

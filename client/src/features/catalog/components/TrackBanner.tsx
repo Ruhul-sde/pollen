@@ -43,7 +43,10 @@ export function TrackBanner({ userId, onRequireLogin }: TrackBannerProps) {
   }, [userId]);
 
   return (
-    <section id="track" className="border-y border-[#e8e8e8] dark:border-neutral-800 bg-[#f5f5f5] dark:bg-neutral-900 px-6 py-14 md:px-16 text-black dark:text-white transition-colors duration-200">
+    <section
+      id="track"
+      className="border-y border-[#e8e8e8] dark:border-neutral-800 bg-[#f5f5f5] dark:bg-neutral-900 px-6 py-14 md:px-16 text-black dark:text-white transition-colors duration-200 scroll-mt-20 sm:scroll-mt-24"
+    >
       <div className="mx-auto flex max-w-screen-xl flex-col gap-6 md:flex-row md:items-center md:gap-16">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-black dark:text-white">Track Your Order</p>

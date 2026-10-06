@@ -226,7 +226,8 @@ const GLOBAL_STYLES = `
 `;
 
 function scrollToHash(hash: string) {
-  const target = hash === "#" ? null : document.querySelector(hash);
+  const selector = hash === "#fragrances" ? "#shop-collection, #fragrances" : hash;
+  const target = hash === "#" ? null : document.querySelector(selector);
   if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
   else window.scrollTo({ top: 0, behavior: "smooth" });
   window.history.pushState(null, "", hash);
@@ -539,7 +540,13 @@ export default function App() {
         const hash = hashAnchor.getAttribute("href");
         if (hash) {
           event.preventDefault();
-          scrollToHash(hash);
+          if (hash === "#fragrances" || hash === "#shop-collection" || hash === "#collection" || hash === "#shop") {
+            handleOpenShopCollection();
+          } else if (hash === "#track" || hash === "#track-order") {
+            handleOpenTrackOrder();
+          } else {
+            scrollToHash(hash);
+          }
           return;
         }
       }
@@ -562,6 +569,30 @@ export default function App() {
     };
     document.addEventListener("click", handleInternalNavigation);
     return () => document.removeEventListener("click", handleInternalNavigation);
+  }, [
+    activeRoute,
+    giftSetOpen,
+    checkoutOpen,
+    paymentOpen,
+    orderHistoryOpen,
+    privacyOpen,
+    termsOpen,
+    ordersShippingOpen,
+    refundOpen,
+    cookiesOpen,
+  ]);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash === "#fragrances" || hash === "#shop-collection" || hash === "#collection" || hash === "#shop") {
+      setTimeout(() => {
+        handleOpenShopCollection();
+      }, 300);
+    } else if (hash === "#track" || hash === "#track-order") {
+      setTimeout(() => {
+        handleOpenTrackOrder();
+      }, 300);
+    }
   }, []);
 
   useEffect(() => {
@@ -856,6 +887,76 @@ export default function App() {
       const el = document.getElementById("about");
       if (el) el.scrollIntoView({ behavior: "smooth" });
     }
+  };
+
+  const handleOpenShopCollection = () => {
+    const isNotHome =
+      activeRoute !== "/" ||
+      giftSetOpen ||
+      checkoutOpen ||
+      paymentOpen ||
+      orderHistoryOpen ||
+      privacyOpen ||
+      termsOpen ||
+      ordersShippingOpen ||
+      refundOpen ||
+      cookiesOpen;
+
+    if (isNotHome) {
+      handleOpenHome(true);
+      let attempts = 0;
+      const tryScroll = () => {
+        const el = document.getElementById("shop-collection");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        } else if (attempts < 10) {
+          attempts++;
+          setTimeout(tryScroll, 50);
+        }
+      };
+      setTimeout(tryScroll, 80);
+    } else {
+      const el = document.getElementById("shop-collection");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+    window.history.pushState(null, "", "#shop-collection");
+  };
+
+  const handleOpenTrackOrder = () => {
+    const isNotHome =
+      activeRoute !== "/" ||
+      giftSetOpen ||
+      checkoutOpen ||
+      paymentOpen ||
+      orderHistoryOpen ||
+      privacyOpen ||
+      termsOpen ||
+      ordersShippingOpen ||
+      refundOpen ||
+      cookiesOpen;
+
+    if (isNotHome) {
+      handleOpenHome(true);
+      let attempts = 0;
+      const tryScroll = () => {
+        const el = document.getElementById("track");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        } else if (attempts < 10) {
+          attempts++;
+          setTimeout(tryScroll, 50);
+        }
+      };
+      setTimeout(tryScroll, 80);
+    } else {
+      const el = document.getElementById("track");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+    window.history.pushState(null, "", "#track");
   };
   const handleOpenGiftSet = () => {
     sessionStorage.setItem("know-pollen-detail-route", "/gift-set");
@@ -1292,6 +1393,8 @@ export default function App() {
         onOpenGiftSet={isFeatureEnabled("giftSet") ? handleOpenGiftSet : undefined}
         onOpenHome={handleOpenHome}
         onOpenAbout={handleOpenAbout}
+        onOpenFragrances={handleOpenShopCollection}
+        onOpenTrackOrder={handleOpenTrackOrder}
         onOpenFragrance={(id) => {
           if (id === 1) handleOpenPowerOfYou();
           if (id === 2) handleOpenLostCherry();
@@ -1313,6 +1416,8 @@ export default function App() {
         onOpenHome={handleOpenHome}
         onOpenAbout={handleOpenAbout}
         onOpenGiftSet={isFeatureEnabled("giftSet") ? handleOpenGiftSet : undefined}
+        onOpenFragrances={handleOpenShopCollection}
+        onOpenTrackOrder={handleOpenTrackOrder}
         showTrackOrder={isFeatureEnabled("orderTracking")}
         cartCount={cartCount}
         onCartOpen={handleOpenCart}
@@ -1357,14 +1462,12 @@ export default function App() {
         onProfileUpdated={(updated) => setUser(updated)}
         onTrackOrder={(trackingId) => {
           setProfileSettingsOpen(false);
-          const el = document.querySelector("#track");
-          if (el) el.scrollIntoView({ behavior: "smooth" });
+          handleOpenTrackOrder();
           window.dispatchEvent(new CustomEvent("lookup-track-id", { detail: trackingId }));
         }}
         onShopNow={() => {
           setProfileSettingsOpen(false);
-          const el = document.querySelector("#fragrances");
-          if (el) el.scrollIntoView({ behavior: "smooth" });
+          handleOpenShopCollection();
         }}
         onPayNow={handlePayNow}
       />
@@ -1598,9 +1701,7 @@ export default function App() {
             onBuyAgain={handleBuyAgain}
             onExploreFragrances={() => {
               setOrderHistoryOpen(false);
-              window.history.pushState(null, "", "/");
-              const el = document.querySelector("#fragrances");
-              if (el) el.scrollIntoView({ behavior: "smooth" });
+              handleOpenShopCollection();
             }}
           />
         ) : (
