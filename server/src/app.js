@@ -46,6 +46,8 @@ const corsOptions = {
     "X-Requested-With",
     "Accept",
     "Origin",
+    "x-admin-token",
+    "x-access-token",
     "x-razorpay-signature",
     "baggage",
     "sentry-trace",
@@ -63,7 +65,15 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", origin);
   res.header("Access-Control-Allow-Credentials", "true");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, x-razorpay-signature, baggage, sentry-trace");
+  const requestHeaders = req.headers["access-control-request-headers"];
+  if (requestHeaders) {
+    res.header("Access-Control-Allow-Headers", requestHeaders);
+  } else {
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With, Accept, Origin, x-admin-token, x-access-token, x-razorpay-signature, baggage, sentry-trace"
+    );
+  }
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }

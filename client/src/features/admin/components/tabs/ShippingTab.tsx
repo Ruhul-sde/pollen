@@ -14,7 +14,7 @@ import {
   Truck,
   Zap,
 } from "lucide-react";
-import { saveAdminShippingConfig } from "@/app/api";
+import { ensureAdminToken, saveAdminShippingConfig } from "@/app/api";
 
 interface ShippingTabProps {
   shippingRules: any[];
@@ -160,6 +160,8 @@ export function ShippingTab({ shippingRules, onUpdated }: ShippingTabProps) {
     setIsSaving(true);
     setSaveError(null);
     try {
+      await ensureAdminToken();
+
       const payload: any = {
         _id: activeRule?._id,
         name: "India Post Speed Post Standard",
@@ -182,7 +184,10 @@ export function ShippingTab({ shippingRules, onUpdated }: ShippingTabProps) {
         maxDays: Number(maxDays) || 5,
       };
 
-      await saveAdminShippingConfig(payload);
+      const saved = await saveAdminShippingConfig(payload);
+      try {
+        localStorage.setItem("pollen_shipping_config", JSON.stringify(saved || payload));
+      } catch {}
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
       if (onUpdated) onUpdated();
