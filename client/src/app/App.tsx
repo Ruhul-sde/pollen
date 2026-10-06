@@ -9,7 +9,7 @@ import {
   type FragranceProduct,
   PRODUCT_IMAGE_MAP,
 } from "./data";
-import { fetchProducts, adminLogin, registerCustomer, loginCustomer, continueWithEmail, clearAdminToken } from "./api";
+import { fetchProducts, adminLogin, registerCustomer, loginCustomer, continueWithEmail, clearAdminToken, setAdminToken } from "./api";
 import { Footer } from "./footer";
 import giftGalleryOne from "./Images/4a.PNG";
 import {
@@ -716,10 +716,17 @@ export default function App() {
     }
 
     if (authMode === "login") {
-      // 1. Try admin credentials only for the exact admin email
-      if (cleanedEmail === "admin@pollen.com" || cleanedEmail.endsWith("@pollen.com")) {
+      // 1. Try admin credentials for admin emails
+      if (
+        cleanedEmail === "admin@pollen.com" ||
+        cleanedEmail.endsWith("@pollen.com") ||
+        cleanedEmail === "hammambinasraful@gmail.com"
+      ) {
         try {
           const adminUser = await adminLogin(cleanedEmail, password);
+          if (adminUser?.accessToken) {
+            setAdminToken(adminUser.accessToken);
+          }
           setCustomSession(adminUser);
           setUser(adminUser);
           setAuthOpen(false);
@@ -742,6 +749,16 @@ export default function App() {
           name: cleanedEmail.split("@")[0],
           role: "user",
         };
+        if (customerData?.accessToken) {
+          if (
+            customer.role === "admin" ||
+            customer.role === "superadmin" ||
+            customer.email === "admin@pollen.com" ||
+            customer.email === "hammambinasraful@gmail.com"
+          ) {
+            setAdminToken(customerData.accessToken);
+          }
+        }
         setCustomSession(customer);
         setUser(customer);
         setAuthOpen(false);
@@ -793,6 +810,16 @@ export default function App() {
     } else returnToHome();
   };
   const handleLoginSuccess = (verifiedUser: any) => {
+    if (verifiedUser?.accessToken) {
+      if (
+        verifiedUser.role === "admin" ||
+        verifiedUser.role === "superadmin" ||
+        verifiedUser.email === "admin@pollen.com" ||
+        verifiedUser.email === "hammambinasraful@gmail.com"
+      ) {
+        setAdminToken(verifiedUser.accessToken);
+      }
+    }
     setCustomSession(verifiedUser);
     setUser(verifiedUser);
     setAuthOpen(false);
@@ -1485,6 +1512,9 @@ export default function App() {
         open={adminLoginOpen}
         onClose={() => setAdminLoginOpen(false)}
         onSuccess={(adminUser) => {
+          if ((adminUser as any)?.accessToken) {
+            setAdminToken((adminUser as any).accessToken);
+          }
           setCustomSession(adminUser);
           setUser(adminUser);
           setProfileSettingsOpen(false);

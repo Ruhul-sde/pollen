@@ -34,6 +34,7 @@ import {
   processAdminReturn,
   toggleAdminUserStatus,
   updateAdminOrderStatus,
+  ensureAdminToken,
 } from "@/app/api";
 import { AdminHeader } from "./AdminHeader";
 import { OverviewTab } from "./tabs/OverviewTab";
@@ -149,7 +150,9 @@ export function AdminDashboard({
 
   useEffect(() => {
     if (open) {
-      loadData();
+      ensureAdminToken().finally(() => {
+        loadData();
+      });
     }
   }, [open, orderFilter]);
 

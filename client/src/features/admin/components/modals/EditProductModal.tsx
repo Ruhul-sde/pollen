@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Check, Edit3, Image as ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { motion } from "motion/react";
-import { BackendProduct, updateAdminProduct, uploadImage } from "@/app/api";
+import { BackendProduct, updateAdminProduct, uploadImage, ensureAdminToken } from "@/app/api";
 
 interface EditProductModalProps {
   product: BackendProduct | null;
@@ -150,6 +150,7 @@ export function EditProductModal({ product, onClose, onProductUpdated }: EditPro
 
       const targetId = product._id || (product as any).productId || product.slug;
 
+      await ensureAdminToken();
       await updateAdminProduct(targetId, {
         name: form.name,
         tagline: form.tagline,

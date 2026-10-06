@@ -89,6 +89,6 @@ export const GST_RATE = 0.18; // 18% default
 export const POINTS_PER_RUPEE = 1; // 1 point per ₹1 spent
 export const RUPEES_PER_POINT = 0.25; // ₹0.25 per point redeemed
 
-export const JWT_ACCESS_EXPIRY = "15m";
-export const JWT_REFRESH_EXPIRY = "7d";
+export const JWT_ACCESS_EXPIRY = "30d";
+export const JWT_REFRESH_EXPIRY = "30d";
 export const OTP_EXPIRY_MINUTES = 10;

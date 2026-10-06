@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Tag, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { BackendProduct, updateAdminProduct } from "@/app/api";
+import { BackendProduct, updateAdminProduct, ensureAdminToken } from "@/app/api";
 
 interface EditPriceModalProps {
   product: BackendProduct | null;
@@ -73,6 +73,7 @@ export function EditPriceModal({ product, onClose, onSaved }: EditPriceModalProp
     e.preventDefault();
     try {
       setSavingPrice(true);
+      await ensureAdminToken();
       const targetId = product._id || (product as any).productId || product.slug;
 
       await updateAdminProduct(targetId, {
