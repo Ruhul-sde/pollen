@@ -909,19 +909,19 @@ export default function App() {
         const el = document.getElementById("shop-collection");
         if (el) {
           el.scrollIntoView({ behavior: "smooth" });
-        } else if (attempts < 10) {
+        } else if (attempts < 20) {
           attempts++;
-          setTimeout(tryScroll, 50);
+          setTimeout(tryScroll, 100);
         }
       };
-      setTimeout(tryScroll, 80);
+      setTimeout(tryScroll, 250);
     } else {
       const el = document.getElementById("shop-collection");
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
       }
     }
-    window.history.pushState(null, "", "#shop-collection");
+    window.history.replaceState(null, "", "/#shop-collection");
   };
 
   const handleOpenTrackOrder = () => {
@@ -944,19 +944,19 @@ export default function App() {
         const el = document.getElementById("track");
         if (el) {
           el.scrollIntoView({ behavior: "smooth" });
-        } else if (attempts < 10) {
+        } else if (attempts < 20) {
           attempts++;
-          setTimeout(tryScroll, 50);
+          setTimeout(tryScroll, 100);
         }
       };
-      setTimeout(tryScroll, 80);
+      setTimeout(tryScroll, 250);
     } else {
       const el = document.getElementById("track");
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
       }
     }
-    window.history.pushState(null, "", "#track");
+    window.history.replaceState(null, "", "/#track");
   };
   const handleOpenGiftSet = () => {
     sessionStorage.setItem("know-pollen-detail-route", "/gift-set");
