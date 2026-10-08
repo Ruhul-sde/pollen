@@ -9,18 +9,6 @@ export function getApiBaseUrl(): string {
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    const isLocal =
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host === "0.0.0.0" ||
-      host.endsWith(".local");
-    if (isLocal) {
-      return "http://localhost:3000/api";
-    }
-    return PROD_API_BASE_URL;
-  }
   return PROD_API_BASE_URL;
 }
 
@@ -211,8 +199,6 @@ export async function fetchProducts(): Promise<BackendProduct[]> {
       `${PROD_API_BASE_URL}/v1/products`,
       "/api/products",
       "/api/v1/products",
-      "http://localhost:3000/api/products",
-      "http://localhost:5001/api/products",
     ]),
   );
 
