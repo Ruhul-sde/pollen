@@ -7,6 +7,7 @@ import storyThree from "@/app/Images/3a.PNG";
 import { FragranceProduct } from "@/core/types";
 import { PriceTag } from "@/shared/components/PriceTag";
 import { QuantityControl } from "@/shared/components/QuantityControl";
+import { DEFAULT_FRAGRANCES } from "@/app/data";
 
 interface PricingSectionProps {
   fragrances?: FragranceProduct[];
@@ -50,7 +51,8 @@ export function PricingSection({
     return fragrance.img || [storyTwo, storyThree, storyOne][idx % 3];
   };
 
-  const perfumes = (fragrances || [])
+  const sourceList = (fragrances && fragrances.length > 0) ? fragrances : DEFAULT_FRAGRANCES;
+  const perfumes = sourceList
     .filter((f) => !f.isBundle)
     .sort((a, b) => {
       const aKey = (a.slug || a.name || "").toLowerCase().replace(/\s+/g, "-");

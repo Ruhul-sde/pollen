@@ -201,13 +201,47 @@ export async function deleteCoupon(req, res, next) {
 
 // ── Shipping Rules ──────────────────────────────────────────────────────────────
 
+/** GET /api/v1/shipping/config */
+export async function getPublicShippingConfig(req, res, next) {
+  try {
+    let rule =
+      (await ShippingRule.findOne({ isActive: true, isDefault: true }).lean()) ||
+      (await ShippingRule.findOne({ isActive: true }).lean());
+    if (!rule) {
+      rule = await ShippingRule.findOne().sort({ updatedAt: -1 }).lean();
+    }
+    res.json({
+      success: true,
+      data: rule || {
+        shippingType: "tiered",
+        flatCharge: 65,
+        standardCharge: 65,
+        localCharge: 35,
+        circleCharge: 47,
+        nationalCharge: 65,
+        specialCharge: 85,
+        freeShippingAbove: 499,
+        waiveShipping: false,
+        waiveLabel: "100% Delivery Fee Waived",
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 /** GET /api/v1/shipping/calculate */
 export async function calculateShipping(req, res, next) {
   try {
     const { pincode, cartTotal } = req.query;
     const amount = Number(cartTotal) || 0;
 
-    const rule = (await ShippingRule.findOne({ isActive: true, isDefault: true })) || (await ShippingRule.findOne({ isActive: true }));
+    let rule =
+      (await ShippingRule.findOne({ isActive: true, isDefault: true }).lean()) ||
+      (await ShippingRule.findOne({ isActive: true }).lean());
+    if (!rule) {
+      rule = await ShippingRule.findOne().sort({ updatedAt: -1 }).lean();
+    }
 
     if (rule?.blockedPincodes?.includes(pincode)) {
       return res.json({
@@ -216,27 +250,32 @@ export async function calculateShipping(req, res, next) {
       });
     }
 
-    const freeThreshold = rule?.freeShippingAbove !== undefined && rule?.freeShippingAbove !== null
-      ? rule.freeShippingAbove
-      : 499;
+    const freeThreshold =
+      rule?.freeShippingAbove !== undefined && rule?.freeShippingAbove !== null
+        ? Number(rule.freeShippingAbove)
+        : rule?.waiveShipping
+        ? 0
+        : 499;
 
     const speedPostCalc = calculateSpeedPostTariff({
       pincode: pincode ? String(pincode) : "",
       cartTotal: amount,
       freeShippingAbove: freeThreshold,
-      customCharges: rule ? {
-        shippingType: rule.shippingType || "tiered",
-        flatCharge: rule.flatCharge,
-        standardCharge: rule.standardCharge,
-        localCharge: rule.localCharge,
-        circleCharge: rule.circleCharge,
-        nationalCharge: rule.nationalCharge,
-        specialCharge: rule.specialCharge,
-        waiveShipping: rule.waiveShipping ?? false,
-        waiveLabel: rule.waiveLabel || "100% Delivery Fee Waived",
-        minDays: rule.minDays,
-        maxDays: rule.maxDays,
-      } : null,
+      customCharges: rule
+        ? {
+            shippingType: rule.shippingType || "tiered",
+            flatCharge: rule.flatCharge,
+            standardCharge: rule.standardCharge,
+            localCharge: rule.localCharge,
+            circleCharge: rule.circleCharge,
+            nationalCharge: rule.nationalCharge,
+            specialCharge: rule.specialCharge,
+            waiveShipping: Boolean(rule.waiveShipping),
+            waiveLabel: rule.waiveLabel || "100% Delivery Fee Waived",
+            minDays: rule.minDays,
+            maxDays: rule.maxDays,
+          }
+        : null,
     });
 
     res.json({

@@ -141,57 +141,99 @@ export function getPostalCircleInfo(pincode) {
 export function calculateSpeedPostTariff({
   pincode = "",
   cartTotal = 0,
-  freeShippingAbove = 499,
+  freeShippingAbove,
   customCharges = null,
+  waiveShipping: directWaiveShipping,
+  waiveLabel: directWaiveLabel,
+  shippingType: directShippingType,
+  flatCharge: directFlatCharge,
+  standardCharge: directStandardCharge,
+  localCharge: directLocalCharge,
+  circleCharge: directCircleCharge,
+  nationalCharge: directNationalCharge,
+  specialCharge: directSpecialCharge,
+  minDays: directMinDays,
+  maxDays: directMaxDays,
 } = {}) {
+  const mergedCharges = {
+    ...customCharges,
+    ...(directShippingType !== undefined ? { shippingType: directShippingType } : {}),
+    ...(directFlatCharge !== undefined ? { flatCharge: directFlatCharge } : {}),
+    ...(directStandardCharge !== undefined ? { standardCharge: directStandardCharge } : {}),
+    ...(directLocalCharge !== undefined ? { localCharge: directLocalCharge } : {}),
+    ...(directCircleCharge !== undefined ? { circleCharge: directCircleCharge } : {}),
+    ...(directNationalCharge !== undefined ? { nationalCharge: directNationalCharge } : {}),
+    ...(directSpecialCharge !== undefined ? { specialCharge: directSpecialCharge } : {}),
+    ...(directWaiveShipping !== undefined ? { waiveShipping: directWaiveShipping } : {}),
+    ...(directWaiveLabel !== undefined ? { waiveLabel: directWaiveLabel } : {}),
+    ...(directMinDays !== undefined ? { minDays: directMinDays } : {}),
+    ...(directMaxDays !== undefined ? { maxDays: directMaxDays } : {}),
+  };
+
   const cleanPin = (pincode || "").replace(/\D/g, "").slice(0, 6);
   const circleInfo = getPostalCircleInfo(cleanPin);
 
-  const shippingType = customCharges?.shippingType || "tiered";
-  const flatRate = customCharges?.flatCharge !== undefined && customCharges?.flatCharge !== null
-    ? Number(customCharges.flatCharge)
-    : (customCharges?.standardCharge !== undefined ? Number(customCharges.standardCharge) : 65);
+  const shippingType = mergedCharges?.shippingType || "tiered";
+  const flatRate = mergedCharges?.flatCharge !== undefined && mergedCharges?.flatCharge !== null
+    ? Number(mergedCharges.flatCharge)
+    : (mergedCharges?.standardCharge !== undefined ? Number(mergedCharges.standardCharge) : 65);
 
   let standardCharge = 65;
-  let minDays = customCharges?.minDays !== undefined ? Number(customCharges.minDays) : 3;
-  let maxDays = customCharges?.maxDays !== undefined ? Number(customCharges.maxDays) : 5;
+  let minDays = mergedCharges?.minDays !== undefined ? Number(mergedCharges.minDays) : 3;
+  let maxDays = mergedCharges?.maxDays !== undefined ? Number(mergedCharges.maxDays) : 5;
 
   if (shippingType === "flat") {
     standardCharge = flatRate;
   } else {
-    const local = customCharges?.localCharge !== undefined ? Number(customCharges.localCharge) : 35;
-    const circle = customCharges?.circleCharge !== undefined ? Number(customCharges.circleCharge) : 47;
-    const national = customCharges?.nationalCharge !== undefined ? Number(customCharges.nationalCharge) : 65;
-    const special = customCharges?.specialCharge !== undefined ? Number(customCharges.specialCharge) : 85;
+    const local = mergedCharges?.localCharge !== undefined ? Number(mergedCharges.localCharge) : 35;
+    const circle = mergedCharges?.circleCharge !== undefined ? Number(mergedCharges.circleCharge) : 47;
+    const national = mergedCharges?.nationalCharge !== undefined ? Number(mergedCharges.nationalCharge) : 65;
+    const special = mergedCharges?.specialCharge !== undefined ? Number(mergedCharges.specialCharge) : 85;
 
     switch (circleInfo.tier) {
       case "local":
         standardCharge = local;
-        if (customCharges?.minDays === undefined) { minDays = 1; maxDays = 2; }
+        if (mergedCharges?.minDays === undefined) { minDays = 1; maxDays = 2; }
         break;
       case "circle":
         standardCharge = circle;
-        if (customCharges?.minDays === undefined) { minDays = 2; maxDays = 3; }
+        if (mergedCharges?.minDays === undefined) { minDays = 2; maxDays = 3; }
         break;
       case "national":
         standardCharge = national;
-        if (customCharges?.minDays === undefined) { minDays = 3; maxDays = 5; }
+        if (mergedCharges?.minDays === undefined) { minDays = 3; maxDays = 5; }
         break;
       case "special":
         standardCharge = special;
-        if (customCharges?.minDays === undefined) { minDays = 5; maxDays = 7; }
+        if (mergedCharges?.minDays === undefined) { minDays = 5; maxDays = 7; }
         break;
     }
   }
 
-  const waiveShipping = Boolean(customCharges?.waiveShipping);
-  const waiveLabel = customCharges?.waiveLabel || "100% Delivery Fee Waived";
+  const waiveShipping = Boolean(mergedCharges?.waiveShipping);
+  const waiveLabel = mergedCharges?.waiveLabel || "100% Delivery Fee Waived";
 
-  const hasFreeShipping = freeShippingAbove !== null && freeShippingAbove !== undefined && Number(freeShippingAbove) > 0;
-  const meetsFreeThreshold = hasFreeShipping && cartTotal >= Number(freeShippingAbove);
-  const isFree = waiveShipping || meetsFreeThreshold;
+  const effectiveFreeThreshold =
+    freeShippingAbove !== undefined && freeShippingAbove !== null
+      ? freeShippingAbove
+      : (mergedCharges?.freeShippingAbove !== undefined && mergedCharges?.freeShippingAbove !== null
+        ? mergedCharges.freeShippingAbove
+        : waiveShipping
+        ? 0
+        : 499);
+
+  const hasFreeShipping =
+    effectiveFreeThreshold !== null &&
+    effectiveFreeThreshold !== undefined &&
+    !isNaN(Number(effectiveFreeThreshold)) &&
+    Number(effectiveFreeThreshold) >= 0;
+  const meetsFreeThreshold =
+    hasFreeShipping && (Number(effectiveFreeThreshold) === 0 || cartTotal >= Number(effectiveFreeThreshold));
+  const isFree = waiveShipping || meetsFreeThreshold || standardCharge === 0;
   const charge = isFree ? 0 : standardCharge;
-  const waivedAmount = isFree ? standardCharge : 0;
+  const waivedAmount = isFree
+    ? (standardCharge > 0 ? standardCharge : (mergedCharges?.standardCharge || 65))
+    : 0;
 
   // Compute estimated delivery date
   const now = new Date();

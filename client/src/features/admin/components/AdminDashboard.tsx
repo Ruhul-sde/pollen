@@ -12,15 +12,19 @@ import {
   Sliders,
   Truck,
   Users,
+  ShieldCheck,
 } from "lucide-react";
 import {
   AdminStats,
   AdminUser,
+  AdminAccount,
   BackendProduct,
   approveAdminReview,
   deleteAdminCoupon,
   deleteAdminOrder,
   deleteAdminProduct,
+  deleteAdminAccount,
+  getAdminAccounts,
   getAdminAuditLogs,
   getAdminCoupons,
   getAdminNewsletterSubscribers,
@@ -34,6 +38,7 @@ import {
   processAdminReturn,
   toggleAdminUserStatus,
   updateAdminOrderStatus,
+  updateAdminAccount,
   ensureAdminToken,
 } from "@/app/api";
 import { AdminHeader } from "./AdminHeader";
@@ -47,12 +52,14 @@ import { ReviewsTab } from "./tabs/ReviewsTab";
 import { ShippingTab } from "./tabs/ShippingTab";
 import { NewsletterTab } from "./tabs/NewsletterTab";
 import { AuditLogsTab } from "./tabs/AuditLogsTab";
+import { AdminsTab } from "./tabs/AdminsTab";
 import { SettingsTab } from "./tabs/SettingsTab";
 import { EditPriceModal } from "./modals/EditPriceModal";
 import { EditProductModal } from "./modals/EditProductModal";
 import { AddProductModal } from "./modals/AddProductModal";
 import { AddCouponModal } from "./modals/AddCouponModal";
 import { EditCouponModal } from "./modals/EditCouponModal";
+import { CreateAdminModal } from "./modals/CreateAdminModal";
 import { OrderDetailsModal } from "./modals/OrderDetailsModal";
 import { TrackingModal } from "./modals/TrackingModal";
 import { CustomerDetailModal } from "./modals/CustomerDetailModal";
@@ -77,6 +84,7 @@ export function AdminDashboard({
   const [shippingRules, setShippingRules] = useState<any[]>([]);
   const [newsletterSubs, setNewsletterSubs] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<AdminAccount[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -91,6 +99,8 @@ export function AdminDashboard({
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showAddCoupon, setShowAddCoupon] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<any | null>(null);
+  const [showAddAdmin, setShowAddAdmin] = useState(false);
+  const [editingAdmin, setEditingAdmin] = useState<AdminAccount | null>(null);
   const [editingPriceProduct, setEditingPriceProduct] = useState<BackendProduct | null>(null);
   const [editingProduct, setEditingProduct] = useState<BackendProduct | null>(null);
 
@@ -115,6 +125,7 @@ export function AdminDashboard({
         shippingData,
         newsletterData,
         auditData,
+        adminsData,
       ] = await Promise.allSettled([
         getAdminStats(),
         getAdminOrders(orderFilter),
@@ -126,6 +137,7 @@ export function AdminDashboard({
         getAdminShippingRules(),
         getAdminNewsletterSubscribers(),
         getAdminAuditLogs(),
+        getAdminAccounts(),
       ]);
 
       if (statsData.status === "fulfilled") setStats(statsData.value);
@@ -138,6 +150,7 @@ export function AdminDashboard({
       if (shippingData.status === "fulfilled") setShippingRules(shippingData.value);
       if (newsletterData.status === "fulfilled") setNewsletterSubs(newsletterData.value);
       if (auditData.status === "fulfilled") setAuditLogs(auditData.value);
+      if (adminsData.status === "fulfilled") setAdmins(adminsData.value);
 
       if (isManual) showToast("System synchronized with live database");
     } catch (err) {
@@ -254,6 +267,28 @@ export function AdminDashboard({
     }
   };
 
+  // Admin Team Handlers
+  const handleDeleteAdmin = async (adminId: string) => {
+    try {
+      await deleteAdminAccount(adminId);
+      showToast("Administrator account deleted successfully");
+      loadData();
+    } catch (err: any) {
+      window.alert(err?.message || "Failed to delete administrator account");
+    }
+  };
+
+  const handleToggleAdminStatus = async (admin: AdminAccount) => {
+    try {
+      const newStatus = admin.isActive === false;
+      await updateAdminAccount(admin._id || (admin as any).id, { isActive: newStatus });
+      showToast(`Admin account ${newStatus ? "activated" : "suspended"}`);
+      loadData();
+    } catch (err: any) {
+      window.alert(err?.message || "Failed to update admin account status");
+    }
+  };
+
   if (!open) return null;
 
   const { adminTheme } = useTenantConfig();
@@ -272,6 +307,7 @@ export function AdminDashboard({
     { id: "shipping", label: "Shipping", icon: Truck },
     { id: "newsletter", label: "Subscribers", icon: Mail },
     { id: "audit", label: "Audit Trails", icon: Layers },
+    { id: "admins", label: "Admin Team", icon: ShieldCheck, badge: admins.length > 0 ? admins.length : undefined },
     { id: "settings", label: "Settings & Features", icon: Sliders },
   ];
 
@@ -501,6 +537,23 @@ export function AdminDashboard({
 
               {activeTab === "audit" && <AuditLogsTab auditLogs={auditLogs} />}
 
+              {activeTab === "admins" && (
+                <AdminsTab
+                  admins={admins}
+                  currentAdminEmail={adminUser?.email}
+                  onAddAdmin={() => {
+                    setEditingAdmin(null);
+                    setShowAddAdmin(true);
+                  }}
+                  onEditAdmin={(adm) => {
+                    setEditingAdmin(adm);
+                    setShowAddAdmin(true);
+                  }}
+                  onDeleteAdmin={handleDeleteAdmin}
+                  onToggleStatus={handleToggleAdminStatus}
+                />
+              )}
+
               {activeTab === "settings" && <SettingsTab onShowToast={showToast} />}
             </>
           )}
@@ -572,6 +625,24 @@ export function AdminDashboard({
         onSaved={() => {
           loadData();
           if (onProductsUpdated) onProductsUpdated();
+        }}
+      />
+
+      <CreateAdminModal
+        open={showAddAdmin}
+        onClose={() => {
+          setShowAddAdmin(false);
+          setEditingAdmin(null);
+        }}
+        adminToEdit={editingAdmin}
+        currentAdminEmail={adminUser?.email}
+        onSuccess={(savedAdmin, isEdit) => {
+          loadData();
+          showToast(
+            isEdit
+              ? `Administrator details updated for ${savedAdmin.name}`
+              : `Administrator account created for ${savedAdmin.email}`
+          );
         }}
       />
 

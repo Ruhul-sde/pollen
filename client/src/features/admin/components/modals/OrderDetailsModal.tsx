@@ -19,7 +19,62 @@ export function OrderDetailsModal({
 }: OrderDetailsModalProps) {
   if (!order) return null;
 
-  const addr = order.shippingAddress || order.shipping_address || {};
+  const addr =
+    order.deliveryAddress ||
+    order.delivery_address ||
+    order.shippingAddress ||
+    order.shipping_address ||
+    order.address ||
+    {};
+
+  const customerName =
+    addr.name ||
+    order.customerName ||
+    order.user?.name ||
+    order.userName ||
+    "Customer";
+
+  const customerPhone =
+    addr.phone ||
+    order.customerPhone ||
+    order.user?.phone ||
+    order.phone ||
+    "—";
+
+  const customerEmail =
+    addr.email ||
+    order.customerEmail ||
+    order.user?.email ||
+    order.email ||
+    "";
+
+  const fullStreet =
+    addr.line1 ||
+    addr.address ||
+    addr.address_line1 ||
+    addr.street ||
+    addr.line2 ||
+    "";
+
+  const cityStatePin = [
+    addr.city,
+    addr.state,
+    addr.pincode || addr.postal_code ? `- ${addr.pincode || addr.postal_code}` : "",
+    addr.country && addr.country !== "India" ? addr.country : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const orderTotal = Number(
+    order.total !== undefined
+      ? order.total
+      : order.totalAmount !== undefined
+      ? order.totalAmount
+      : order.amount !== undefined
+      ? order.amount
+      : 0
+  );
+
   const items: any[] = order.items || [];
   const status = order.status || "pending";
   const orderId = order._id || order.orderId;
@@ -67,14 +122,23 @@ export function OrderDetailsModal({
                 <MapPin className="h-3.5 w-3.5 text-amber-400" />
                 <span>Shipping Address</span>
               </div>
-              <p className="font-bold text-white text-sm">{addr.name || order.user?.name || "Customer"}</p>
-              <p className="text-neutral-400 mt-1">{addr.address || "Address not provided"}</p>
-              <p className="text-neutral-400">
-                {addr.city ? `${addr.city}, ` : ""}
-                {addr.state ? `${addr.state} ` : ""}
-                {addr.pincode ? `- ${addr.pincode}` : ""}
+              <p className="font-bold text-white text-sm">{customerName}</p>
+              <p className="text-neutral-300 mt-1 leading-relaxed text-xs">
+                {fullStreet || "Address not provided"}
               </p>
-              <p className="text-neutral-400 mt-1 font-mono">Phone: {addr.phone || "—"}</p>
+              {cityStatePin && (
+                <p className="text-neutral-400 text-xs mt-0.5">{cityStatePin}</p>
+              )}
+              <div className="mt-2.5 pt-2 border-t border-neutral-800/80 space-y-1">
+                <p className="text-neutral-400 font-mono text-[11px]">
+                  <span className="text-neutral-500">Phone:</span> {customerPhone}
+                </p>
+                {customerEmail && (
+                  <p className="text-neutral-400 font-mono text-[11px]">
+                    <span className="text-neutral-500">Email:</span> {customerEmail}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="p-3.5 rounded-xl border border-neutral-800 bg-neutral-900/40">
@@ -89,14 +153,36 @@ export function OrderDetailsModal({
                 Payment Status:{" "}
                 <span className="text-emerald-400 font-semibold uppercase">{order.paymentStatus || "Paid"}</span>
               </p>
-              {order.paymentId && (
-                <p className="text-neutral-400 mt-1 font-mono">ID: {order.paymentId}</p>
+              {(order.razorpayOrderId || order.paymentId) && (
+                <p className="text-neutral-400 mt-1 font-mono text-[11px] truncate">
+                  Ref: {order.razorpayOrderId || order.paymentId}
+                </p>
               )}
-              <div className="mt-3 pt-2 border-t border-neutral-800/80 flex items-center justify-between">
-                <span className="text-neutral-400">Total Charged:</span>
-                <span className="text-base font-bold text-amber-300 font-mono">
-                  ₹{Number(order.totalAmount || order.amount || 0).toLocaleString()}
-                </span>
+              <div className="mt-2.5 pt-2 border-t border-neutral-800/80 space-y-1">
+                {order.subtotal !== undefined && order.subtotal > 0 && (
+                  <div className="flex items-center justify-between text-neutral-400 text-[11px]">
+                    <span>Subtotal:</span>
+                    <span className="font-mono">₹{order.subtotal}</span>
+                  </div>
+                )}
+                {order.couponDiscount !== undefined && order.couponDiscount > 0 && (
+                  <div className="flex items-center justify-between text-emerald-400 text-[11px]">
+                    <span>Discount ({order.couponCode || "Coupon"}):</span>
+                    <span className="font-mono">-₹{order.couponDiscount}</span>
+                  </div>
+                )}
+                {order.shippingCharge !== undefined && (
+                  <div className="flex items-center justify-between text-neutral-400 text-[11px]">
+                    <span>Speed Post:</span>
+                    <span className="font-mono">{order.shippingCharge === 0 ? "FREE" : `₹${order.shippingCharge}`}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-1 border-t border-neutral-800">
+                  <span className="text-neutral-300 font-semibold">Total Charged:</span>
+                  <span className="text-base font-bold text-amber-300 font-mono">
+                    ₹{orderTotal.toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -106,28 +192,34 @@ export function OrderDetailsModal({
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2.5">
               Ordered Fragrances ({items.length})
             </h4>
-            <div className="divide-y divide-neutral-800 rounded-xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
-              {items.map((item, idx) => (
-                <div key={idx} className="p-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={item.img || item.imageUrl || "/Images/2e.jpg"}
-                      alt={item.name}
-                      className="h-10 w-10 rounded-lg object-cover bg-neutral-950 border border-neutral-800"
-                    />
-                    <div>
-                      <p className="font-bold text-white text-xs">{item.name}</p>
-                      <p className="text-[10px] text-neutral-400">
-                        {item.volume || "50 ML"} · Qty: {item.quantity || 1}
-                      </p>
+            {items.length === 0 ? (
+              <div className="p-4 rounded-xl border border-neutral-800 bg-neutral-900/30 text-center text-xs text-neutral-400">
+                Extrait de Parfum order with promotional offer (Total: ₹{orderTotal.toLocaleString()})
+              </div>
+            ) : (
+              <div className="divide-y divide-neutral-800 rounded-xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
+                {items.map((item, idx) => (
+                  <div key={idx} className="p-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={item.img || item.imageUrl || "/Images/2e.jpg"}
+                        alt={item.name}
+                        className="h-10 w-10 rounded-lg object-cover bg-neutral-950 border border-neutral-800"
+                      />
+                      <div>
+                        <p className="font-bold text-white text-xs">{item.name}</p>
+                        <p className="text-[10px] text-neutral-400">
+                          {item.volume || "50 ML"} · Qty: {item.quantity || 1}
+                        </p>
+                      </div>
                     </div>
+                    <span className="font-mono font-semibold text-amber-300">
+                      ₹{((Number(item.price) || 0) * (Number(item.quantity) || 1)).toLocaleString()}
+                    </span>
                   </div>
-                  <span className="font-mono font-semibold text-amber-300">
-                    ₹{((Number(item.price) || 0) * (Number(item.quantity) || 1)).toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Tracking info if any */}

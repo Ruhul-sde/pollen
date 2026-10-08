@@ -270,16 +270,59 @@ export function CheckoutSection({
       }
     }
     updateShipping();
+
+    const handleConfigUpdate = () => {
+      updateShipping();
+    };
+    window.addEventListener("shipping-config-updated", handleConfigUpdate);
+    window.addEventListener("storage", handleConfigUpdate);
+
     return () => {
       active = false;
+      window.removeEventListener("shipping-config-updated", handleConfigUpdate);
+      window.removeEventListener("storage", handleConfigUpdate);
     };
   }, [activePincode, total]);
 
-  const isWaivedShipping = Boolean(shippingInfo?.isWaived);
-  const isFreeShipping = Boolean(appliedCoupon?.freeShipping || shippingInfo?.isFreeShipping || isWaivedShipping);
-  const shippingCharge = isFreeShipping ? 0 : (shippingInfo?.charge ?? (discountedSubtotal >= 499 ? 0 : 65));
+  // Read cached shipping config for instant zero-flash fallback
+  const cachedShippingConfig = (() => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("pollen_shipping_config") : null;
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  })();
+
+  const isConfigFree = Boolean(
+    cachedShippingConfig?.waiveShipping ||
+    (cachedShippingConfig?.shippingType === "flat" && Number(cachedShippingConfig?.flatCharge) === 0) ||
+    (cachedShippingConfig?.freeShippingAbove !== undefined &&
+      cachedShippingConfig?.freeShippingAbove !== null &&
+      !isNaN(Number(cachedShippingConfig?.freeShippingAbove)) &&
+      Number(cachedShippingConfig?.freeShippingAbove) >= 0 &&
+      (Number(cachedShippingConfig?.freeShippingAbove) === 0 || discountedSubtotal >= Number(cachedShippingConfig?.freeShippingAbove)))
+  );
+
+  const isWaivedShipping = Boolean(shippingInfo?.isWaived || (!shippingInfo && cachedShippingConfig?.waiveShipping));
+  const isFreeShipping = Boolean(
+    appliedCoupon?.freeShipping ||
+    shippingInfo?.isFreeShipping ||
+    isWaivedShipping ||
+    (shippingInfo && shippingInfo.charge === 0) ||
+    (!shippingInfo && isConfigFree)
+  );
+
+  const fallbackCharge = isConfigFree
+    ? 0
+    : cachedShippingConfig?.shippingType === "flat" && cachedShippingConfig?.flatCharge !== undefined
+    ? Number(cachedShippingConfig.flatCharge)
+    : discountedSubtotal >= 499
+    ? 0
+    : 65;
+
+  const shippingCharge = isFreeShipping ? 0 : (shippingInfo?.charge ?? fallbackCharge);
   const grandTotal = Math.max(0, discountedSubtotal + shippingCharge);
-  const totalSavings = couponDiscount + (isFreeShipping ? (shippingInfo?.standardCharge || 65) : 0);
+  const totalSavings = couponDiscount + (isFreeShipping ? (shippingInfo?.waivedAmount || shippingInfo?.standardCharge || 65) : 0);
 
   const couponPayload = appliedCoupon
     ? {
@@ -1040,7 +1083,12 @@ export function CheckoutSection({
                         • <strong>Carrier:</strong> All parcels are dispatched via <strong>India Post Speed Post EMS</strong> with national air and surface express delivery.
                       </p>
                       <p>
-                        • <strong>Free Delivery:</strong> Orders valued at ₹499 and above qualify for 100% complimentary Speed Post shipping across India.
+                        • <strong>Free Delivery:</strong>{" "}
+                        {shippingInfo?.freeShippingAbove === 0 || isWaivedShipping ? (
+                          "All orders currently qualify for 100% complimentary Speed Post shipping across India."
+                        ) : (
+                          <>Orders valued at ₹{shippingInfo?.freeShippingAbove ?? 499} and above qualify for 100% complimentary Speed Post shipping across India.</>
+                        )}
                       </p>
                       <p>
                         • <strong>Live Tracking:</strong> You will receive an official Consignment AWB number to track package milestones live on India Post and our website.
@@ -1170,13 +1218,13 @@ export function CheckoutSection({
                     ) : isFreeShipping ? (
                       <div className="flex items-center gap-1.5 flex-wrap justify-end">
                         <span className="text-neutral-400 dark:text-neutral-500 line-through text-xs font-mono">
-                          ₹{shippingInfo?.standardCharge || 65}
+                          ₹{shippingInfo?.waivedAmount || shippingInfo?.standardCharge || 65}
                         </span>
                         <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
                           FREE
                         </span>
                         <span className="rounded-md bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                          {isWaivedShipping ? (shippingInfo?.waiveLabel || "Waived Off") : "Waived Off"}
+                          {isWaivedShipping ? (shippingInfo?.waiveLabel || "Waived Off") : "Free Delivery"}
                         </span>
                       </div>
                     ) : (
@@ -1185,17 +1233,17 @@ export function CheckoutSection({
                   </div>
                 </div>
 
-                {/* Delivery Fee Waiver Notification Banner */}
-                {isWaivedShipping && !shippingLoading && (
+                {/* Delivery Fee Waiver / Complimentary Shipping Notification Banner */}
+                {isFreeShipping && !shippingLoading && (
                   <div className="rounded-xl border border-emerald-500/25 bg-emerald-50/80 dark:bg-emerald-950/30 p-2.5 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <Sparkles size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span className="font-medium text-[11px] truncate">
-                        {shippingInfo?.waiveLabel || "Delivery Fee Waived"}: ₹{shippingInfo?.standardCharge || 65} Speed Post shipping is 100% complimentary
+                        {shippingInfo?.waiveLabel || "Free Shipping Applied"}: ₹{shippingInfo?.waivedAmount || shippingInfo?.standardCharge || 65} Speed Post shipping is 100% complimentary
                       </span>
                     </div>
                     <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs shrink-0">
-                      -₹{shippingInfo?.standardCharge || 65}
+                      -₹{shippingInfo?.waivedAmount || shippingInfo?.standardCharge || 65}
                     </span>
                   </div>
                 )}

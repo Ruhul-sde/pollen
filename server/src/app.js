@@ -186,7 +186,7 @@ app.use("/api/v1/cart", cartRoutes);
 app.use("/api/v1/wishlist", wishlistRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/coupons", couponRoutes);
-// NOTE: couponRoutes also handles /shipping and /newsletter sub-routes via its own router
+app.use("/api/v1/shipping", couponRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/addresses", addressRoutes);
 app.use("/api/v1/upload", uploadRoutes);
@@ -199,6 +199,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/coupons", couponRoutes);
+app.use("/api/shipping", couponRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/addresses", addressRoutes);
 app.use("/api/upload", uploadRoutes);

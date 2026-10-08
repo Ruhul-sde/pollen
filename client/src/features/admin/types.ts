@@ -11,6 +11,7 @@ export type NavSection =
   | "shipping"
   | "newsletter"
   | "audit"
+  | "admins"
   | "settings";
 
 export interface AdminDashboardProps {

@@ -596,12 +596,50 @@ export async function updateOrderPaymentStatus(req, res, next) {
 /** GET /api/v1/orders/:id */
 export async function getOrderById(req, res, next) {
   try {
-    const order = await Order.findById(req.params.id).lean();
+    const rawId = req.params.id;
+    const order = await Order.findOne({
+      $or: [
+        mongoose.isValidObjectId(rawId) ? { _id: rawId } : null,
+        { orderId: rawId },
+      ].filter(Boolean),
+    }).populate("userId").lean();
+
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
     const payment = await Payment.findOne({ orderId: order._id }).lean();
 
-    res.json({ success: true, data: { ...order, payment } });
+    const deliveryAddr = order.deliveryAddress || order.shippingAddress || {};
+    const customerName = deliveryAddr.name || order.userId?.name || order.user?.name || "Customer";
+    const customerPhone = deliveryAddr.phone || order.userId?.phone || order.user?.phone || "";
+    const customerEmail = order.userId?.email || order.user?.email || "";
+    const totalAmount = Number(order.total !== undefined ? order.total : (order.totalAmount || order.amount || 0));
+
+    const enriched = {
+      ...order,
+      payment,
+      total: totalAmount,
+      totalAmount: totalAmount,
+      amount: totalAmount,
+      customerName,
+      customerPhone,
+      customerEmail,
+      deliveryAddress: deliveryAddr,
+      shippingAddress: {
+        ...deliveryAddr,
+        name: customerName,
+        phone: customerPhone,
+        email: customerEmail,
+        address: deliveryAddr.line1 || deliveryAddr.address || deliveryAddr.address_line1 || deliveryAddr.street || "",
+        line1: deliveryAddr.line1 || deliveryAddr.address || deliveryAddr.address_line1 || "",
+        city: deliveryAddr.city || "",
+        state: deliveryAddr.state || "",
+        pincode: deliveryAddr.pincode || deliveryAddr.postal_code || "",
+        country: deliveryAddr.country || "India",
+      },
+      user: order.userId && typeof order.userId === "object" ? order.userId : { name: customerName, phone: customerPhone, email: customerEmail },
+    };
+
+    res.json({ success: true, data: enriched });
   } catch (err) {
     next(err);
   }
@@ -780,13 +818,13 @@ export async function downloadInvoice(req, res, next) {
 export async function adminGetOrders(req, res, next) {
   try {
     const filter = {};
-    if (req.query.status) filter.status = req.query.status;
+    if (req.query.status && req.query.status !== "all") filter.status = req.query.status;
     if (req.query.paymentStatus) filter.paymentStatus = req.query.paymentStatus;
     if (req.query.userId) filter.userId = req.query.userId;
 
     const result = await paginate(Order, filter, {
       page: req.query.page || 1,
-      limit: req.query.limit || 20,
+      limit: req.query.limit || 50,
       sort: { createdAt: -1 },
       populate: "userId",
     });
@@ -798,10 +836,37 @@ export async function adminGetOrders(req, res, next) {
         const mm = String(d.getMonth() + 1).padStart(2, "0");
         const yy = String(d.getFullYear()).slice(-2);
         const resolvedOrderId = o.orderId || `PN${dd}${mm}${yy}${(o._id ? o._id.toString().slice(-4) : "0000").toUpperCase()}`;
+
+        const deliveryAddr = o.deliveryAddress || o.shippingAddress || {};
+        const customerName = deliveryAddr.name || o.userId?.name || o.user?.name || "Customer";
+        const customerPhone = deliveryAddr.phone || o.userId?.phone || o.user?.phone || "";
+        const customerEmail = o.userId?.email || o.user?.email || "";
+        const totalAmount = Number(o.total !== undefined ? o.total : (o.totalAmount || o.amount || 0));
+
         return {
           ...o,
           orderId: resolvedOrderId,
           order_id: resolvedOrderId,
+          total: totalAmount,
+          totalAmount: totalAmount,
+          amount: totalAmount,
+          customerName,
+          customerPhone,
+          customerEmail,
+          deliveryAddress: deliveryAddr,
+          shippingAddress: {
+            ...deliveryAddr,
+            name: customerName,
+            phone: customerPhone,
+            email: customerEmail,
+            address: deliveryAddr.line1 || deliveryAddr.address || deliveryAddr.address_line1 || deliveryAddr.street || "",
+            line1: deliveryAddr.line1 || deliveryAddr.address || deliveryAddr.address_line1 || "",
+            city: deliveryAddr.city || "",
+            state: deliveryAddr.state || "",
+            pincode: deliveryAddr.pincode || deliveryAddr.postal_code || "",
+            country: deliveryAddr.country || "India",
+          },
+          user: o.userId && typeof o.userId === "object" ? o.userId : { name: customerName, phone: customerPhone, email: customerEmail },
         };
       });
     }

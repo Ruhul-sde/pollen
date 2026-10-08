@@ -187,6 +187,7 @@ export function ShippingTab({ shippingRules, onUpdated }: ShippingTabProps) {
       const saved = await saveAdminShippingConfig(payload);
       try {
         localStorage.setItem("pollen_shipping_config", JSON.stringify(saved || payload));
+        window.dispatchEvent(new CustomEvent("shipping-config-updated", { detail: saved || payload }));
       } catch {}
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);

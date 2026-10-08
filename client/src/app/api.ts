@@ -3,7 +3,28 @@
  */
 
 // Backend API base URL
-const API_BASE_URL = "https://pollen-server.jxdww2.easypanel.host/api";
+export const PROD_API_BASE_URL = "https://pollen-server.jxdww2.easypanel.host/api";
+
+export function getApiBaseUrl(): string {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    const isLocal =
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "0.0.0.0" ||
+      host.endsWith(".local");
+    if (isLocal) {
+      return "http://localhost:3000/api";
+    }
+    return PROD_API_BASE_URL;
+  }
+  return PROD_API_BASE_URL;
+}
+
+export const API_BASE_URL = getApiBaseUrl();
 
 export interface ServerHealthResponse {
   success: boolean;
@@ -181,10 +202,17 @@ export async function checkServerHealth(): Promise<ServerHealthResponse> {
  * Fetch products from MongoDB
  */
 export async function fetchProducts(): Promise<BackendProduct[]> {
+  const currentBase = getApiBaseUrl();
   const endpoints = Array.from(
     new Set([
-      `${API_BASE_URL}/products`,
+      `${currentBase}/products`,
+      `${currentBase}/v1/products`,
+      `${PROD_API_BASE_URL}/products`,
+      `${PROD_API_BASE_URL}/v1/products`,
       "/api/products",
+      "/api/v1/products",
+      "http://localhost:3000/api/products",
+      "http://localhost:5001/api/products",
     ]),
   );
 
@@ -209,10 +237,16 @@ export async function fetchProducts(): Promise<BackendProduct[]> {
  * Fetch a single product by ID or slug
  */
 export async function fetchProductById(idOrSlug: string): Promise<BackendProduct | null> {
+  const currentBase = getApiBaseUrl();
+  const clean = encodeURIComponent(idOrSlug);
   const endpoints = Array.from(
     new Set([
-      `${API_BASE_URL}/products/${encodeURIComponent(idOrSlug)}`,
-      `/api/products/${encodeURIComponent(idOrSlug)}`,
+      `${currentBase}/products/${clean}`,
+      `${currentBase}/v1/products/${clean}`,
+      `${PROD_API_BASE_URL}/products/${clean}`,
+      `${PROD_API_BASE_URL}/v1/products/${clean}`,
+      `/api/products/${clean}`,
+      `/api/v1/products/${clean}`,
     ]),
   );
 
@@ -999,6 +1033,34 @@ export interface DynamicShippingInfo {
 }
 
 /**
+ * Fetch active public shipping rule configuration
+ */
+export async function getPublicShippingConfig(): Promise<any> {
+  const endpoints = [
+    `${API_BASE_URL}/v1/shipping/config`,
+    `${API_BASE_URL}/shipping/config`,
+    `${API_BASE_URL}/v1/shipping`,
+    `${PROD_API_BASE_URL}/v1/shipping/config`,
+    `${PROD_API_BASE_URL}/shipping/config`,
+  ];
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.success && data?.data) {
+          try {
+            localStorage.setItem("pollen_shipping_config", JSON.stringify(data.data));
+          } catch {}
+          return data.data;
+        }
+      }
+    } catch {}
+  }
+  return null;
+}
+
+/**
  * Dynamic Indian Speed Post shipping calculator
  */
 export async function calculateDynamicShipping(
@@ -1006,18 +1068,35 @@ export async function calculateDynamicShipping(
   cartTotal: number
 ): Promise<DynamicShippingInfo> {
   const cleanPin = pincode.replace(/\D/g, "").slice(0, 6);
-  try {
-    const res = await fetch(
-      `${API_BASE_URL}/v1/shipping/calculate?pincode=${encodeURIComponent(cleanPin)}&cartTotal=${cartTotal}`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.data) {
-        return data.data;
+  const queryParams = `pincode=${encodeURIComponent(cleanPin)}&cartTotal=${cartTotal}`;
+
+  const endpoints = Array.from(
+    new Set([
+      `${API_BASE_URL}/v1/shipping/calculate?${queryParams}`,
+      `${API_BASE_URL}/shipping/calculate?${queryParams}`,
+      `${API_BASE_URL}/v1/coupons/shipping/calculate?${queryParams}`,
+      `${API_BASE_URL}/coupons/shipping/calculate?${queryParams}`,
+      `${PROD_API_BASE_URL}/v1/shipping/calculate?${queryParams}`,
+      `${PROD_API_BASE_URL}/shipping/calculate?${queryParams}`,
+      `${PROD_API_BASE_URL}/v1/coupons/shipping/calculate?${queryParams}`,
+    ])
+  );
+
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          try {
+            localStorage.setItem("pollen_shipping_config", JSON.stringify(data.data));
+          } catch {}
+          return data.data;
+        }
       }
+    } catch {
+      // Try next endpoint
     }
-  } catch (err) {
-    console.warn("Speed Post dynamic shipping calculation fallback:", err);
   }
 
   // Graceful client fallback matching Indian Speed Post domestic tariff
@@ -1044,7 +1123,16 @@ export async function calculateDynamicShipping(
   const nationalPrice = customConfig?.nationalCharge !== undefined ? Number(customConfig.nationalCharge) : 65;
   const specialPrice = customConfig?.specialCharge !== undefined ? Number(customConfig.specialCharge) : 85;
   const flatPrice = customConfig?.flatCharge !== undefined ? Number(customConfig.flatCharge) : 65;
-  const freeThreshold = customConfig?.freeShippingAbove !== undefined ? Number(customConfig.freeShippingAbove) : 499;
+
+  const isWaive = Boolean(customConfig?.waiveShipping);
+  const waiveLabel = customConfig?.waiveLabel || "100% Delivery Fee Waived";
+
+  const freeThreshold =
+    customConfig?.freeShippingAbove !== undefined && customConfig?.freeShippingAbove !== null
+      ? Number(customConfig.freeShippingAbove)
+      : isWaive
+      ? 0
+      : 499;
 
   const standardCharge = isFlat
     ? flatPrice
@@ -1056,9 +1144,19 @@ export async function calculateDynamicShipping(
     ? specialPrice
     : nationalPrice;
 
-  const hasFreeShipping = freeThreshold > 0;
-  const isFree = hasFreeShipping && cartTotal >= freeThreshold;
+  const hasFreeThreshold =
+    freeThreshold !== null &&
+    freeThreshold !== undefined &&
+    !isNaN(freeThreshold) &&
+    freeThreshold >= 0;
+  const meetsFreeThreshold =
+    hasFreeThreshold && (freeThreshold === 0 || cartTotal >= freeThreshold);
+  const isFree = isWaive || meetsFreeThreshold || standardCharge === 0;
   const charge = isFree ? 0 : standardCharge;
+  const waivedAmount = isFree
+    ? (standardCharge > 0 ? standardCharge : (customConfig?.standardCharge || 65))
+    : 0;
+
   const minDays = isLocal ? 1 : isCircle ? 2 : isSpecial ? 5 : 3;
   const maxDays = isLocal ? 2 : isCircle ? 3 : isSpecial ? 7 : 5;
 
@@ -1075,7 +1173,10 @@ export async function calculateDynamicShipping(
     standardCharge,
     charge,
     isFreeShipping: isFree,
-    freeShippingAbove: 499,
+    isWaived: isWaive || (isFree && standardCharge > 0),
+    waivedAmount,
+    waiveLabel,
+    freeShippingAbove: freeThreshold,
     minDays,
     maxDays,
     estimatedDaysText: `${minDays}-${maxDays} Business Days`,
@@ -1939,6 +2040,132 @@ export async function getPublicStoreSettings(): Promise<any> {
     console.warn("[Settings] Could not load public settings:", err);
   }
   return null;
+}
+
+/**
+ * Admin Team & Access Control APIs
+ */
+export interface AdminAccount {
+  _id: string;
+  id?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: "admin" | "superadmin" | string;
+  permissions?: string[];
+  isActive?: boolean;
+  isVerified?: boolean;
+  lastLogin?: string;
+  createdAt?: string;
+}
+
+export async function getAdminAccounts(): Promise<AdminAccount[]> {
+  const endpoints = [
+    `${API_BASE_URL}/v1/admin/admins`,
+    `${API_BASE_URL}/admin/admins`,
+  ];
+  for (const url of endpoints) {
+    try {
+      const res = await fetchWithAdminAuth(url);
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data?.success && Array.isArray(data.data)) {
+          return data.data;
+        }
+      }
+    } catch {}
+  }
+  return [];
+}
+
+export async function createAdminAccount(payload: {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  role?: string;
+  permissions?: string[];
+  isActive?: boolean;
+}): Promise<AdminAccount> {
+  const endpoints = [
+    `${API_BASE_URL}/v1/admin/admins`,
+    `${API_BASE_URL}/admin/admins`,
+  ];
+  let lastError = "Failed to create administrator account";
+  for (const url of endpoints) {
+    try {
+      const res = await fetchWithAdminAuth(url, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success) {
+        return data.data;
+      }
+      if (data?.message) lastError = data.message;
+    } catch (e: any) {
+      if (e?.message) lastError = e.message;
+    }
+  }
+  throw new Error(lastError);
+}
+
+export async function updateAdminAccount(
+  id: string,
+  payload: Partial<{
+    name: string;
+    email: string;
+    password?: string;
+    phone?: string;
+    role?: string;
+    permissions?: string[];
+    isActive?: boolean;
+  }>
+): Promise<AdminAccount> {
+  const endpoints = [
+    `${API_BASE_URL}/v1/admin/admins/${id}`,
+    `${API_BASE_URL}/admin/admins/${id}`,
+  ];
+  let lastError = "Failed to update administrator account";
+  for (const url of endpoints) {
+    try {
+      const res = await fetchWithAdminAuth(url, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success) {
+        return data.data;
+      }
+      if (data?.message) lastError = data.message;
+    } catch (e: any) {
+      if (e?.message) lastError = e.message;
+    }
+  }
+  throw new Error(lastError);
+}
+
+export async function deleteAdminAccount(id: string): Promise<void> {
+  const endpoints = [
+    `${API_BASE_URL}/v1/admin/admins/${id}`,
+    `${API_BASE_URL}/admin/admins/${id}`,
+  ];
+  let lastError = "Failed to delete administrator account";
+  for (const url of endpoints) {
+    try {
+      const res = await fetchWithAdminAuth(url, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && (data?.success || data === null)) {
+        return;
+      }
+      if (data?.message) lastError = data.message;
+    } catch (e: any) {
+      if (e?.message) lastError = e.message;
+    }
+  }
+  throw new Error(lastError);
 }
 
 

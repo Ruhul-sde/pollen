@@ -167,7 +167,7 @@ export function OverviewTab({ stats, orders, onSelectTab }: OverviewTabProps) {
                         : `#${ord.orderId || ord.order_id || ord.displayId || ord._id?.slice(-8)}`}
                     </span>
                     <p className={`text-[11px] mt-0.5 ${isLight ? "text-slate-500" : "text-neutral-400"}`}>
-                      {ord.shippingAddress?.name || ord.user?.name || "Customer"} ·{" "}
+                      {ord.deliveryAddress?.name || ord.shippingAddress?.name || ord.customerName || ord.user?.name || "Customer"} ·{" "}
                       {ord.items?.length || 1} item(s)
                     </p>
                   </div>
@@ -177,7 +177,7 @@ export function OverviewTab({ stats, orders, onSelectTab }: OverviewTabProps) {
                         isLight ? "text-slate-900 font-extrabold" : "text-amber-300"
                       }`}
                     >
-                      ₹{Number(ord.totalAmount || ord.amount || 0).toLocaleString()}
+                      ₹{Number(ord.total !== undefined ? ord.total : (ord.totalAmount || ord.amount || 0)).toLocaleString()}
                     </span>
                     <div className="mt-0.5">
                       <span

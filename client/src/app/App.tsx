@@ -8,6 +8,7 @@ import {
   mapBackendToFragrance,
   type FragranceProduct,
   PRODUCT_IMAGE_MAP,
+  DEFAULT_FRAGRANCES,
 } from "./data";
 import { fetchProducts, adminLogin, registerCustomer, loginCustomer, continueWithEmail, clearAdminToken, setAdminToken } from "./api";
 import { Footer } from "./footer";
@@ -94,13 +95,15 @@ const GiftSetGallerySection = (props: {
   onChangeQuantity: (id: number, change: number) => void;
   onBuyProduct?: (productId: number) => void;
 }) => {
-  const prods = props.products && props.products.length > 0 ? props.products : [];
-  const powerProduct = prods.find((p) => p.slug === "power-of-you" || p.id === 1);
-  const lostProduct = prods.find((p) => p.slug === "lost-cherry" || p.id === 2);
-  const freshProduct = prods.find((p) => p.slug === "fresh-orchid" || p.id === 3);
-  const bundleProduct = prods.find((p) => p.slug === "gift-set" || p.id === 4 || p.isBundle);
+  const prods = props.products && props.products.length > 0 ? props.products : DEFAULT_FRAGRANCES;
+  const powerProduct = prods.find((p) => p.slug === "power-of-you" || p.id === 1) || DEFAULT_FRAGRANCES[0];
+  const lostProduct = prods.find((p) => p.slug === "lost-cherry" || p.id === 2) || DEFAULT_FRAGRANCES[1];
+  const freshProduct = prods.find((p) => p.slug === "fresh-orchid" || p.id === 3) || DEFAULT_FRAGRANCES[2];
+  const bundleProduct = prods.find((p) => p.slug === "gift-set" || p.id === 4 || p.isBundle) || DEFAULT_FRAGRANCES[3];
 
-  return props.route === "/collection" ? (
+  const currentRoute = (props.route || "").split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
+
+  return currentRoute === "/collection" ? (
     <CollectionPageWithBack
       products={prods}
       onAddToCart={(item) =>
@@ -108,7 +111,7 @@ const GiftSetGallerySection = (props: {
       }
       onBack={props.onBack}
     />
-  ) : props.route === "/power-of-you" ? (
+  ) : currentRoute === "/power-of-you" ? (
     <div className="perfume-route">
       <PowerOfYouPageWithRecommendations
         product={powerProduct}
@@ -120,7 +123,7 @@ const GiftSetGallerySection = (props: {
       />
       <PerfumeVariants currentName="Power of You" fragrances={prods} onSelectVariant={props.onSelectVariant} />
     </div>
-  ) : props.route === "/lost-cherry" ? (
+  ) : currentRoute === "/lost-cherry" ? (
     <div className="perfume-route">
       <LostCherryPageWithRecommendations
         product={lostProduct}
@@ -132,7 +135,7 @@ const GiftSetGallerySection = (props: {
       />
       <PerfumeVariants currentName="Lost Cherry" fragrances={prods} onSelectVariant={props.onSelectVariant} />
     </div>
-  ) : props.route === "/fresh-orchid" ? (
+  ) : currentRoute === "/fresh-orchid" ? (
     <div className="perfume-route">
       <FreshOrchidPageWithRecommendations
         product={freshProduct}
@@ -282,10 +285,76 @@ export default function App() {
   );
   const [orderHistory, setOrderHistory] = useState<OrderRecord[]>([]);
   const [pendingNoticeDismissed, setPendingNoticeDismissed] = useState(false);
-  const [fragrances, setFragrances] = useState<FragranceProduct[]>([]);
+  const [fragrances, setFragrances] = useState<FragranceProduct[]>(DEFAULT_FRAGRANCES);
   const [productsLoading, setProductsLoading] = useState(true);
   const shopScrollY = useRef(0);
   const pendingScrollRestore = useRef<number | null>(null);
+
+  interface NavHistoryItem {
+    route: string;
+    scrollY: number;
+    sectionId?: string | null;
+  }
+  const navHistoryRef = useRef<NavHistoryItem[]>([]);
+  const lastHomeScrollY = useRef(0);
+  const lastHomeSection = useRef<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("pollen_nav_history");
+      if (saved) {
+        navHistoryRef.current = JSON.parse(saved);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        activeRoute === "/" &&
+        !giftSetOpen &&
+        !checkoutOpen &&
+        !paymentOpen &&
+        !orderHistoryOpen &&
+        !privacyOpen &&
+        !termsOpen &&
+        !ordersShippingOpen &&
+        !refundOpen &&
+        !cookiesOpen
+      ) {
+        const y = window.scrollY;
+        lastHomeScrollY.current = y;
+
+        const sections = ["shop-collection", "fragrances", "track", "about"];
+        let foundSection: string | null = null;
+        for (const id of sections) {
+          const el = document.getElementById(id);
+          if (el) {
+            const rect = el.getBoundingClientRect();
+            if (rect.top <= window.innerHeight * 0.6 && rect.bottom >= window.innerHeight * 0.2) {
+              foundSection = id;
+              break;
+            }
+          }
+        }
+        lastHomeSection.current = foundSection;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [
+    activeRoute,
+    giftSetOpen,
+    checkoutOpen,
+    paymentOpen,
+    orderHistoryOpen,
+    privacyOpen,
+    termsOpen,
+    ordersShippingOpen,
+    refundOpen,
+    cookiesOpen,
+  ]);
 
   const reloadProducts = async () => {
     try {
@@ -307,10 +376,15 @@ export default function App() {
         if (items && items.length > 0) {
           const mapped = items.map(mapBackendToFragrance);
           setFragrances(mapped);
+        } else {
+          setFragrances((prev) => (prev.length > 0 ? prev : DEFAULT_FRAGRANCES));
         }
       })
       .catch((err) => {
         console.warn("Failed to fetch products from backend:", err);
+        if (mounted) {
+          setFragrances((prev) => (prev.length > 0 ? prev : DEFAULT_FRAGRANCES));
+        }
       })
       .finally(() => {
         if (mounted) setProductsLoading(false);
@@ -566,6 +640,26 @@ export default function App() {
         openOrderHistory();
         return;
       }
+
+      // Intercept any fragrance or collection links across the entire page
+      const anyAnchor = (event.target as Element).closest<HTMLAnchorElement>("a");
+      if (anyAnchor && anyAnchor.href) {
+        try {
+          const url = new URL(anyAnchor.href, window.location.origin);
+          if (url.origin === window.location.origin) {
+            const cleanPath = url.pathname.replace(/\/+$/, "") || "/";
+            if (
+              ["/power-of-you", "/lost-cherry", "/fresh-orchid", "/gift-set", "/collection"].includes(
+                cleanPath,
+              )
+            ) {
+              event.preventDefault();
+              handleOpenPerfumeRoute(cleanPath);
+              return;
+            }
+          }
+        } catch {}
+      }
     };
     document.addEventListener("click", handleInternalNavigation);
     return () => document.removeEventListener("click", handleInternalNavigation);
@@ -604,7 +698,8 @@ export default function App() {
       setRefundOpen(false);
       setCookiesOpen(false);
       if (currentPath === "/" || currentPath === "/know-pollen" || currentPath === "/knowpollen") {
-        handleOpenHome(false);
+        handleOpenHome(false, false);
+        restoreHomePosition(lastHomeScrollY.current, lastHomeSection.current);
       } else if (
         ["/gift-set", "/collection", "/power-of-you", "/lost-cherry", "/fresh-orchid"].includes(
           currentPath,
@@ -867,16 +962,135 @@ export default function App() {
     setAuthOpen(false);
     handleOpenHome();
   };
-  const navigateBack = (fallbackPath = "/") => {
-    if (window.history.length > 1) {
-      window.history.back();
-    } else if (fallbackPath === "/") {
-      handleOpenHome(true);
+  const restoreHomePosition = (scrollY?: number, sectionId?: string | null) => {
+    let attempts = 0;
+    const tryScroll = () => {
+      if (sectionId) {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+          return;
+        }
+      }
+      if (scrollY !== undefined && scrollY > 50) {
+        window.scrollTo({ top: scrollY, behavior: "smooth" });
+        return;
+      }
+      if (attempts < 8) {
+        attempts++;
+        setTimeout(tryScroll, 60);
+      }
+    };
+    setTimeout(tryScroll, 50);
+  };
+
+  const pushNavigation = (targetRoute: string) => {
+    let currentRoute = "/";
+    if (paymentOpen) currentRoute = "/payment";
+    else if (checkoutOpen) currentRoute = "/checkout";
+    else if (orderHistoryOpen) currentRoute = "/my-orders";
+    else if (giftSetOpen) currentRoute = activeRoute;
+    else currentRoute = activeRoute || "/";
+
+    if (currentRoute === targetRoute) return;
+
+    const currentScrollY = currentRoute === "/" ? lastHomeScrollY.current : window.scrollY;
+    const currentSection = currentRoute === "/" ? lastHomeSection.current : null;
+
+    navHistoryRef.current.push({
+      route: currentRoute,
+      scrollY: currentScrollY,
+      sectionId: currentSection,
+    });
+
+    if (navHistoryRef.current.length > 20) {
+      navHistoryRef.current.shift();
+    }
+
+    try {
+      sessionStorage.setItem("pollen_nav_history", JSON.stringify(navHistoryRef.current));
+    } catch {}
+  };
+
+  const handleGoBack = () => {
+    if (paymentOpen) {
+      setPaymentOpen(false);
+      setPaymentOrder(null);
+      const prev = navHistoryRef.current.pop();
+      try {
+        sessionStorage.setItem("pollen_nav_history", JSON.stringify(navHistoryRef.current));
+      } catch {}
+      if (prev && prev.route === "/checkout") {
+        setCheckoutOpen(true);
+        window.history.pushState(null, "", "/checkout");
+        return;
+      }
+    }
+
+    let prevItem = navHistoryRef.current.pop();
+    try {
+      sessionStorage.setItem("pollen_nav_history", JSON.stringify(navHistoryRef.current));
+    } catch {}
+
+    if (!prevItem) {
+      const savedDetail = sessionStorage.getItem("know-pollen-detail-route");
+      if (checkoutOpen && savedDetail && savedDetail !== "/checkout") {
+        prevItem = { route: savedDetail, scrollY: 0 };
+      } else if (orderHistoryOpen && savedDetail && savedDetail !== "/my-orders") {
+        prevItem = { route: savedDetail, scrollY: 0 };
+      } else {
+        prevItem = { route: "/", scrollY: 0, sectionId: "shop-collection" };
+      }
+    }
+
+    if (prevItem.route === "/") {
+      sessionStorage.removeItem("know-pollen-detail-route");
+      setActiveRoute("/");
+      setGiftSetOpen(false);
+      setCheckoutOpen(false);
+      setPaymentOpen(false);
+      setPaymentOrder(null);
+      setOrderHistoryOpen(false);
+      resetOverlaysForNavigation();
+
+      window.history.pushState(null, "", prevItem.sectionId ? `/#${prevItem.sectionId}` : "/");
+      restoreHomePosition(prevItem.scrollY, prevItem.sectionId);
+    } else if (prevItem.route === "/collection") {
+      resetOverlaysForNavigation();
+      sessionStorage.setItem("know-pollen-detail-route", "/collection");
+      setActiveRoute("/collection");
+      setGiftSetOpen(true);
+      window.history.pushState(null, "", "/collection");
+      if (prevItem.scrollY > 50) {
+        setTimeout(() => window.scrollTo({ top: prevItem.scrollY, behavior: "smooth" }), 50);
+      }
+    } else if (
+      ["/power-of-you", "/lost-cherry", "/fresh-orchid", "/gift-set"].includes(prevItem.route)
+    ) {
+      resetOverlaysForNavigation();
+      sessionStorage.setItem("know-pollen-detail-route", prevItem.route);
+      setActiveRoute(prevItem.route);
+      setGiftSetOpen(true);
+      window.history.pushState(null, "", prevItem.route);
+      window.scrollTo(0, 0);
+    } else if (prevItem.route === "/checkout") {
+      resetOverlaysForNavigation();
+      setCheckoutOpen(true);
+      window.history.pushState(null, "", "/checkout");
+    } else if (prevItem.route === "/my-orders") {
+      resetOverlaysForNavigation();
+      setOrderHistoryOpen(true);
+      window.history.pushState(null, "", "/my-orders");
     } else {
-      handleOpenPerfumeRoute(fallbackPath);
+      handleOpenShopCollection();
     }
   };
-  const handleOpenHome = (pushHistory = true) => {
+
+  const navigateBack = (_fallbackPath = "/") => {
+    handleGoBack();
+  };
+
+  const handleOpenHome = (pushHistory = true, resetScroll = true) => {
     sessionStorage.removeItem("know-pollen-detail-route");
     setActiveRoute("/");
     setGiftSetOpen(false);
@@ -898,14 +1112,16 @@ export default function App() {
     if (pushHistory) {
       window.history.pushState(null, "", "/");
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    if (resetScroll) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
   };
 
   const handleOpenAbout = () => {
     if (activeRoute !== "/") {
-      handleOpenHome(true);
+      handleOpenHome(true, false);
       setTimeout(() => {
         const el = document.getElementById("about");
         if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -930,7 +1146,7 @@ export default function App() {
       cookiesOpen;
 
     if (isNotHome) {
-      handleOpenHome(true);
+      handleOpenHome(true, false);
       let attempts = 0;
       const tryScroll = () => {
         const el = document.getElementById("shop-collection");
@@ -965,7 +1181,7 @@ export default function App() {
       cookiesOpen;
 
     if (isNotHome) {
-      handleOpenHome(true);
+      handleOpenHome(true, false);
       let attempts = 0;
       const tryScroll = () => {
         const el = document.getElementById("track");
@@ -985,7 +1201,27 @@ export default function App() {
     }
     window.history.replaceState(null, "", "/#track");
   };
+  const resetOverlaysForNavigation = () => {
+    setCheckoutOpen(false);
+    setPaymentOpen(false);
+    setPaymentOrder(null);
+    setOrderHistoryOpen(false);
+    setPrivacyOpen(false);
+    setTermsOpen(false);
+    setOrdersShippingOpen(false);
+    setRefundOpen(false);
+    setCookiesOpen(false);
+    setProfileSettingsOpen(false);
+    setAdminDashboardOpen(false);
+    setAdminLoginOpen(false);
+    setAuthOpen(false);
+    setCartOpen(false);
+    setMenuOpen(false);
+  };
+
   const handleOpenGiftSet = () => {
+    pushNavigation("/gift-set");
+    resetOverlaysForNavigation();
     sessionStorage.setItem("know-pollen-detail-route", "/gift-set");
     setActiveRoute("/gift-set");
     setGiftSetOpen(true);
@@ -993,10 +1229,11 @@ export default function App() {
     window.scrollTo(0, 0);
   };
   const handleBackFromGiftSet = () => {
-    sessionStorage.removeItem("know-pollen-detail-route");
-    navigateBack("/");
+    handleGoBack();
   };
   const handleOpenPowerOfYou = () => {
+    pushNavigation("/power-of-you");
+    resetOverlaysForNavigation();
     sessionStorage.setItem("know-pollen-detail-route", "/power-of-you");
     setActiveRoute("/power-of-you");
     setGiftSetOpen(true);
@@ -1004,6 +1241,8 @@ export default function App() {
     window.scrollTo(0, 0);
   };
   const handleOpenLostCherry = () => {
+    pushNavigation("/lost-cherry");
+    resetOverlaysForNavigation();
     sessionStorage.setItem("know-pollen-detail-route", "/lost-cherry");
     setActiveRoute("/lost-cherry");
     setGiftSetOpen(true);
@@ -1011,6 +1250,8 @@ export default function App() {
     window.scrollTo(0, 0);
   };
   const handleOpenFreshOrchid = () => {
+    pushNavigation("/fresh-orchid");
+    resetOverlaysForNavigation();
     sessionStorage.setItem("know-pollen-detail-route", "/fresh-orchid");
     setActiveRoute("/fresh-orchid");
     setGiftSetOpen(true);
@@ -1018,9 +1259,28 @@ export default function App() {
     window.scrollTo(0, 0);
   };
   const handleOpenPerfumeRoute = (route: string) => {
-    if (route === "/power-of-you") return handleOpenPowerOfYou();
-    if (route === "/lost-cherry") return handleOpenLostCherry();
-    if (route === "/fresh-orchid") return handleOpenFreshOrchid();
+    const clean = (route || "").split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
+    if (clean === "/power-of-you") return handleOpenPowerOfYou();
+    if (clean === "/lost-cherry") return handleOpenLostCherry();
+    if (clean === "/fresh-orchid") return handleOpenFreshOrchid();
+    if (clean === "/gift-set") return handleOpenGiftSet();
+    if (clean === "/collection") {
+      pushNavigation("/collection");
+      resetOverlaysForNavigation();
+      sessionStorage.setItem("know-pollen-detail-route", "/collection");
+      setActiveRoute("/collection");
+      setGiftSetOpen(true);
+      window.history.pushState(null, "", "/collection");
+      window.scrollTo(0, 0);
+      return;
+    }
+    const matched = fragrances.find((f) => f.slug === clean.replace(/^\//, ""));
+    if (matched) {
+      if (matched.slug === "power-of-you" || matched.id === 1) return handleOpenPowerOfYou();
+      if (matched.slug === "lost-cherry" || matched.id === 2) return handleOpenLostCherry();
+      if (matched.slug === "fresh-orchid" || matched.id === 3) return handleOpenFreshOrchid();
+      if (matched.isBundle || matched.slug === "gift-set" || matched.id === 4) return handleOpenGiftSet();
+    }
   };
   const handleOpenCart = () => setCartOpen(true);
   const handleAddToCart = (fragrance: { id: number; name: string; img: string; price: number }) => {
@@ -1053,6 +1313,7 @@ export default function App() {
       setCheckoutAfterLogin(true);
       return openAuth("login");
     }
+    pushNavigation("/checkout");
     setCartOpen(false);
     setGiftSetOpen(false);
     setSelectedAddressId((current) => (current && savedAddresses.some((a) => a.id === current) ? current : (savedAddresses[0]?.id ?? null)));
@@ -1112,6 +1373,7 @@ export default function App() {
       setCheckoutAfterLogin(true);
       return openAuth("login");
     }
+    pushNavigation("/checkout");
     setSelectedAddressId((current) =>
       current && savedAddresses.some((a) => a.id === current)
         ? current
@@ -1171,6 +1433,7 @@ export default function App() {
       setCartOpen(false);
       setPaymentOrder(createdOrder);
       setOrderHistory((prev) => [createdOrder, ...prev.filter((o) => o.id !== createdOrder.id)]);
+      pushNavigation("/payment");
       setPaymentOpen(true);
       setCheckoutOpen(false);
       window.history.pushState(null, "", "/payment");
@@ -1313,6 +1576,7 @@ export default function App() {
       openAuth("login");
       return;
     }
+    pushNavigation("/my-orders");
     setOrderHistoryOpen(true);
     setGiftSetOpen(false);
     setCheckoutOpen(false);
@@ -1557,9 +1821,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
-                  setPaymentOpen(false);
-                  setPaymentOrder(null);
-                  navigateBack("/");
+                  handleGoBack();
                 }}
                 className="mb-8 sm:mb-12 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer group"
                 aria-label="Go back"
@@ -1709,8 +1971,7 @@ export default function App() {
             onChangeQuantity={handleCartQuantity}
             onRemoveItem={handleRemoveFromCart}
             onBack={() => {
-              setCheckoutOpen(false);
-              navigateBack("/");
+              handleGoBack();
             }}
             onPlaceOrder={handlePlaceOrder}
             onOpenPrivacy={() => setPrivacyOpen(true)}
@@ -1723,8 +1984,7 @@ export default function App() {
             orders={orderHistory}
             user={user}
             onBack={() => {
-              setOrderHistoryOpen(false);
-              navigateBack("/");
+              handleGoBack();
             }}
             onPayNow={handlePayNow}
             onDeleteOrder={handleDeletePendingOrder}
@@ -1737,7 +1997,7 @@ export default function App() {
         ) : (
           <>
             <Hero />
-            <IntroStories fragrances={fragrances} />
+            <IntroStories fragrances={fragrances} onOpenFragrance={handleOpenPerfumeRoute} />
             <BottleCarousel
               fragrances={fragrances}
               onAddToCart={handleAddToCart}

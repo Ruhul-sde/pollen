@@ -3,12 +3,14 @@ import storyOne from "@/app/Images/1c.jpg";
 import storyTwo from "@/app/Images/2e.jpg";
 import storyThree from "@/app/Images/3a.PNG";
 import { FragranceProduct } from "@/core/types";
+import { DEFAULT_FRAGRANCES } from "@/app/data";
 
 interface IntroStoriesProps {
   fragrances?: FragranceProduct[];
+  onOpenFragrance?: (route: string) => void;
 }
 
-export function IntroStories({ fragrances = [] }: IntroStoriesProps) {
+export function IntroStories({ fragrances = [], onOpenFragrance }: IntroStoriesProps) {
   const routes: Record<string, string> = {
     "lost-cherry": "/lost-cherry",
     "power-of-you": "/power-of-you",
@@ -29,7 +31,10 @@ export function IntroStories({ fragrances = [] }: IntroStoriesProps) {
 
   const CANONICAL_ORDER = ["power-of-you", "lost-cherry", "fresh-orchid"];
   const defaultImages = [storyTwo, storyThree, storyOne];
-  const perfumes = (fragrances || [])
+
+  const sourceList = (fragrances && fragrances.length > 0) ? fragrances : DEFAULT_FRAGRANCES;
+
+  const perfumes = sourceList
     .filter((f) => !f.isBundle)
     .sort((a, b) => {
       const aSlug = (a.slug || a.name || "").toLowerCase().replace(/\s+/g, "-");
@@ -74,7 +79,16 @@ export function IntroStories({ fragrances = [] }: IntroStoriesProps) {
               </p>
               <a
                 href={route}
-                className="mt-5 inline-block text-xs font-medium uppercase tracking-[0.12em] text-white underline underline-offset-8 transition-opacity hover:opacity-70"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (onOpenFragrance) {
+                    onOpenFragrance(route);
+                  } else {
+                    window.history.pushState(null, "", route);
+                    window.dispatchEvent(new PopStateEvent("popstate"));
+                  }
+                }}
+                className="mt-5 inline-block text-xs font-medium uppercase tracking-[0.12em] text-white underline underline-offset-8 transition-opacity hover:opacity-70 cursor-pointer"
               >
                 Explore Parfum
               </a>

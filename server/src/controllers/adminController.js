@@ -271,6 +271,7 @@ export async function getAdmins(req, res, next) {
   try {
     const admins = await User.find({ role: { $in: ["admin", "superadmin"] } })
       .select("-password -refreshTokens")
+      .sort({ createdAt: -1 })
       .lean();
     res.json({ success: true, data: admins });
   } catch (err) {
@@ -281,27 +282,210 @@ export async function getAdmins(req, res, next) {
 /** POST /api/v1/admin/admins */
 export async function createAdmin(req, res, next) {
   try {
-    const existing = await User.findOne({ email: req.body.email });
-    if (existing) return res.status(409).json({ success: false, message: "Email already exists" });
+    const { name, email, password, phone, role, permissions, isActive } = req.body;
+
+    if (!name?.trim()) {
+      return res.status(400).json({ success: false, message: "Admin full name is required" });
+    }
+    if (!email?.trim()) {
+      return res.status(400).json({ success: false, message: "Valid email address is required" });
+    }
+    if (!password || password.length < 6) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const existing = await User.findOne({ email: cleanEmail });
+    if (existing) {
+      return res.status(409).json({ success: false, message: "An account with this email already exists" });
+    }
+
+    if (phone?.trim()) {
+      const existingPhone = await User.findOne({ phone: phone.trim() });
+      if (existingPhone) {
+        return res.status(409).json({ success: false, message: "Phone number is already associated with another account" });
+      }
+    }
+
+    const adminRole = role === "superadmin" ? "superadmin" : "admin";
+    const perms = Array.isArray(permissions) && permissions.length > 0 ? permissions : ["all"];
 
     const admin = await User.create({
-      ...req.body,
-      role: req.body.role || "admin",
+      name: name.trim(),
+      email: cleanEmail,
+      password,
+      phone: phone?.trim() || undefined,
+      role: adminRole,
+      permissions: perms,
       isVerified: true,
-      isActive: true,
+      isActive: isActive !== false,
     });
 
-    await AuditLog.create({
-      adminId: req.user.id,
-      adminEmail: req.user.email,
-      action: "CREATE_ADMIN",
-      entity: "User",
-      entityId: admin._id.toString(),
-      description: `Created admin ${admin.email}`,
-      ip: req.ip,
-    });
+    // Safely write audit log without throwing
+    try {
+      let actorId = mongoose.isValidObjectId(req.user?.id) ? req.user.id : null;
+      if (!actorId) {
+        const rootAdmin = await User.findOne({ role: { $in: ["admin", "superadmin"] } }).select("_id");
+        actorId = rootAdmin?._id || admin._id;
+      }
 
-    res.status(201).json({ success: true, message: "Admin created", data: { id: admin._id, email: admin.email } });
+      await AuditLog.create({
+        adminId: actorId,
+        adminEmail: req.user?.email || "admin",
+        action: "CREATE_ADMIN",
+        entity: "User",
+        entityId: admin._id.toString(),
+        description: `Created admin ${admin.name} (${admin.email}) [Role: ${adminRole}]`,
+        ip: req.ip || "",
+      });
+    } catch (auditErr) {
+      console.warn("[AuditLog] Failed to log admin creation:", auditErr.message);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `Admin ${admin.name} created successfully`,
+      data: {
+        _id: admin._id,
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        phone: admin.phone,
+        role: admin.role,
+        permissions: admin.permissions,
+        isActive: admin.isActive,
+        isVerified: admin.isVerified,
+        createdAt: admin.createdAt,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PUT /api/v1/admin/admins/:id */
+export async function updateAdmin(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { name, email, phone, role, permissions, isActive, password } = req.body;
+
+    const admin = await User.findById(id).select("+password");
+    if (!admin || !["admin", "superadmin"].includes(admin.role)) {
+      return res.status(404).json({ success: false, message: "Admin not found" });
+    }
+
+    if (email && email.toLowerCase().trim() !== admin.email) {
+      const emailTaken = await User.findOne({ email: email.toLowerCase().trim(), _id: { $ne: id } });
+      if (emailTaken) {
+        return res.status(409).json({ success: false, message: "Email is already taken by another account" });
+      }
+      admin.email = email.toLowerCase().trim();
+    }
+
+    if (phone !== undefined) {
+      const cleanPhone = phone?.trim() || "";
+      if (cleanPhone && cleanPhone !== admin.phone) {
+        const phoneTaken = await User.findOne({ phone: cleanPhone, _id: { $ne: id } });
+        if (phoneTaken) {
+          return res.status(409).json({ success: false, message: "Phone number is already associated with another account" });
+        }
+      }
+      admin.phone = cleanPhone || undefined;
+    }
+
+    if (name?.trim()) admin.name = name.trim();
+    if (role && ["admin", "superadmin"].includes(role)) admin.role = role;
+    if (Array.isArray(permissions)) admin.permissions = permissions;
+    if (typeof isActive === "boolean") admin.isActive = isActive;
+    if (password && password.trim().length >= 6) {
+      admin.password = password.trim();
+    }
+
+    await admin.save();
+
+    try {
+      let actorId = mongoose.isValidObjectId(req.user?.id) ? req.user.id : null;
+      if (!actorId) {
+        const rootAdmin = await User.findOne({ role: { $in: ["admin", "superadmin"] } }).select("_id");
+        actorId = rootAdmin?._id || admin._id;
+      }
+
+      await AuditLog.create({
+        adminId: actorId,
+        adminEmail: req.user?.email || "admin",
+        action: "UPDATE_ADMIN",
+        entity: "User",
+        entityId: admin._id.toString(),
+        description: `Updated admin ${admin.name} (${admin.email})`,
+        ip: req.ip || "",
+      });
+    } catch (auditErr) {
+      console.warn("[AuditLog] Failed to log admin update:", auditErr.message);
+    }
+
+    const safeAdmin = admin.toObject();
+    delete safeAdmin.password;
+    delete safeAdmin.refreshTokens;
+
+    res.json({
+      success: true,
+      message: "Admin details updated successfully",
+      data: safeAdmin,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** DELETE /api/v1/admin/admins/:id */
+export async function deleteAdmin(req, res, next) {
+  try {
+    const { id } = req.params;
+    const admin = await User.findById(id);
+    if (!admin || !["admin", "superadmin"].includes(admin.role)) {
+      return res.status(404).json({ success: false, message: "Admin not found" });
+    }
+
+    // Safety checks: don't allow deleting self or primary system admins
+    if (req.user?.id && String(req.user.id) === String(id)) {
+      return res.status(400).json({ success: false, message: "You cannot delete your own admin account" });
+    }
+    if (req.user?.email && req.user.email.toLowerCase() === admin.email.toLowerCase()) {
+      return res.status(400).json({ success: false, message: "You cannot delete your own admin account" });
+    }
+
+    const protectedEmails = [
+      "admin@pollen.com",
+      (process.env.ADMIN_EMAIL || "").toLowerCase().trim(),
+    ].filter(Boolean);
+
+    if (protectedEmails.includes(admin.email.toLowerCase())) {
+      return res.status(400).json({ success: false, message: "Primary system administrator account cannot be deleted" });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    try {
+      let actorId = mongoose.isValidObjectId(req.user?.id) ? req.user.id : null;
+      if (!actorId) {
+        const rootAdmin = await User.findOne({ role: { $in: ["admin", "superadmin"] } }).select("_id");
+        actorId = rootAdmin?._id;
+      }
+
+      await AuditLog.create({
+        adminId: actorId,
+        adminEmail: req.user?.email || "admin",
+        action: "DELETE_ADMIN",
+        entity: "User",
+        entityId: id,
+        description: `Deleted admin ${admin.name} (${admin.email})`,
+        ip: req.ip || "",
+      });
+    } catch (auditErr) {
+      console.warn("[AuditLog] Failed to log admin deletion:", auditErr.message);
+    }
+
+    res.json({ success: true, message: `Admin ${admin.email} deleted successfully` });
   } catch (err) {
     next(err);
   }

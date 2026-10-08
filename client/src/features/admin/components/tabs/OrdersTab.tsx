@@ -30,9 +30,9 @@ export function OrdersTab({
     }
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
-    const id = (o.orderId || o.displayId || o._id || "").toLowerCase();
-    const name = (o.shippingAddress?.name || o.user?.name || "").toLowerCase();
-    const phone = (o.shippingAddress?.phone || "").toLowerCase();
+    const id = (o.orderId || o.order_id || o.displayId || o._id || "").toLowerCase();
+    const name = (o.deliveryAddress?.name || o.shippingAddress?.name || o.customerName || o.user?.name || "").toLowerCase();
+    const phone = (o.deliveryAddress?.phone || o.shippingAddress?.phone || o.customerPhone || o.user?.phone || "").toLowerCase();
     return id.includes(q) || name.includes(q) || phone.includes(q);
   });
 
@@ -95,6 +95,29 @@ export function OrdersTab({
               ) : (
                 filteredOrders.map((ord) => {
                   const ordId = ord._id || ord.orderId;
+                  const customerName =
+                    ord.deliveryAddress?.name ||
+                    ord.shippingAddress?.name ||
+                    ord.customerName ||
+                    ord.user?.name ||
+                    "Customer";
+                  const customerPhone =
+                    ord.deliveryAddress?.phone ||
+                    ord.shippingAddress?.phone ||
+                    ord.customerPhone ||
+                    ord.user?.phone ||
+                    ord.user?.email ||
+                    "—";
+                  const orderTotal = Number(
+                    ord.total !== undefined
+                      ? ord.total
+                      : ord.totalAmount !== undefined
+                      ? ord.totalAmount
+                      : ord.amount !== undefined
+                      ? ord.amount
+                      : 0
+                  );
+
                   return (
                     <tr key={ordId} className="hover:bg-neutral-800/30 transition-colors">
                       <td className="px-6 py-4 font-mono font-bold text-white">
@@ -104,17 +127,17 @@ export function OrdersTab({
                       </td>
                       <td className="px-6 py-4">
                         <p className="font-semibold text-white">
-                          {ord.shippingAddress?.name || ord.user?.name || "Customer"}
+                          {customerName}
                         </p>
                         <p className="text-[11px] text-neutral-400 font-mono">
-                          {ord.shippingAddress?.phone || ord.user?.email || "—"}
+                          {customerPhone}
                         </p>
                       </td>
                       <td className="px-6 py-4 font-mono text-neutral-400">
                         {formatDate(ord.createdAt || ord.created_at)}
                       </td>
                       <td className="px-6 py-4 font-mono font-bold text-amber-300">
-                        ₹{Number(ord.totalAmount || ord.amount || 0).toLocaleString()}
+                        ₹{orderTotal.toLocaleString()}
                       </td>
                       <td className="px-6 py-4">
                         <select

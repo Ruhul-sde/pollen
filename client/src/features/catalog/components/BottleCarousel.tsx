@@ -7,6 +7,7 @@ import carouselTwo from "@/app/Images/2a bg.png";
 import carouselThree from "@/app/Images/3a bg.png";
 import { FragranceProduct } from "@/core/types";
 import { PriceTag } from "@/shared/components/PriceTag";
+import { DEFAULT_FRAGRANCES } from "@/app/data";
 
 interface BottleCarouselProps {
   fragrances?: FragranceProduct[];
@@ -49,7 +50,8 @@ function getCarouselImage(fragrance: FragranceProduct, fallbackIndex: number): s
 const CANONICAL_ORDER = ["power-of-you", "lost-cherry", "fresh-orchid"];
 
 export function BottleCarousel({ fragrances = [], onAddToCart, onBuyNow }: BottleCarouselProps) {
-  const perfumes = (fragrances || [])
+  const sourceList = (fragrances && fragrances.length > 0) ? fragrances : DEFAULT_FRAGRANCES;
+  const perfumes = sourceList
     .filter((f) => !f.isBundle)
     .sort((a, b) => {
       const aKey = (a.slug || a.name || "").toLowerCase().replace(/\s+/g, "-");

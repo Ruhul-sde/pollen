@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const auditLogSchema = new mongoose.Schema(
   {
-    adminId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    adminId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false },
     adminEmail: { type: String },
     action: { type: String, required: true }, // CREATE, UPDATE, DELETE, LOGIN, etc.
     entity: { type: String, required: true }, // Product, Order, User, Coupon, etc.

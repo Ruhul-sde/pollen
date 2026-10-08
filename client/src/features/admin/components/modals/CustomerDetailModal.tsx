@@ -446,13 +446,25 @@ export function CustomerDetailModal({
 
                           <div className="text-right">
                             <span className="text-base font-bold text-amber-300 font-mono">
-                              ₹{ord.total || ord.totalAmount}
+                              ₹{ord.total !== undefined ? ord.total : (ord.totalAmount || 0)}
                             </span>
                             <p className="text-[10px] text-neutral-400 uppercase tracking-wider">
                               Payment: {ord.paymentMethod || "Razorpay"} ({ord.paymentStatus || "pending"})
                             </p>
                           </div>
                         </div>
+
+                        {/* Delivery Address if present */}
+                        {(ord.deliveryAddress?.line1 || ord.shippingAddress?.address) && (
+                          <div className="py-2 text-[11px] text-neutral-400 border-b border-neutral-800/60 flex items-start gap-1.5">
+                            <MapPin className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+                            <span className="text-neutral-300">
+                              {ord.deliveryAddress?.line1 || ord.shippingAddress?.address}
+                              {ord.deliveryAddress?.city ? `, ${ord.deliveryAddress.city}` : ""}
+                              {ord.deliveryAddress?.pincode ? ` - ${ord.deliveryAddress.pincode}` : ""}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Order Items Preview */}
                         <div className="pt-3 space-y-2">

@@ -5,7 +5,7 @@ import {
 import {
   getDashboard,
   adminGetUsers, toggleUserStatus, adminGetUserDetails,
-  getAdmins, createAdmin,
+  getAdmins, createAdmin, updateAdmin, deleteAdmin,
   salesReport, inventoryReport, customerReport,
   adminGetBanners, createBanner, updateBanner, deleteBanner,
   getSettings, updateSettings,
@@ -50,9 +50,11 @@ router.get("/users", adminGetUsers);
 router.get("/users/:id/details", adminGetUserDetails);
 router.put("/users/:id/status", toggleUserStatus);
 
-// Admin management (superadmin only)
-router.get("/admins", requireSuperAdmin, getAdmins);
-router.post("/admins", requireSuperAdmin, createAdmin);
+// Admin management
+router.get("/admins", getAdmins);
+router.post("/admins", createAdmin);
+router.put("/admins/:id", updateAdmin);
+router.delete("/admins/:id", deleteAdmin);
 
 // Products
 router.get("/products", getProducts);

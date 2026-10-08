@@ -6,14 +6,34 @@ export function HeroBanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [videoMode, setVideoMode] = useState<"horizontal" | "vertical">(() => {
-    try {
-      const saved = localStorage.getItem("know-pollen-video-mode");
-      if (saved === "vertical" || saved === "horizontal") return saved;
-    } catch {
-      // Ignore when storage is blocked
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768 ? "vertical" : "horizontal";
     }
     return "horizontal";
   });
+  const lastIsMobileRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.removeItem("know-pollen-video-mode");
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      if (lastIsMobileRef.current === null || lastIsMobileRef.current !== isMobile) {
+        lastIsMobileRef.current = isMobile;
+        setVideoMode(isMobile ? "vertical" : "horizontal");
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -40,11 +60,6 @@ export function HeroBanner() {
 
   const handleModeChange = (mode: "horizontal" | "vertical") => {
     setVideoMode(mode);
-    try {
-      localStorage.setItem("know-pollen-video-mode", mode);
-    } catch {
-      // Ignore
-    }
   };
 
   return (
@@ -75,7 +90,7 @@ export function HeroBanner() {
         className={
           videoMode === "horizontal"
             ? "absolute inset-0 h-full w-full object-cover object-center transition-all duration-300"
-            : "relative z-10 h-full w-auto max-w-full aspect-[9/16] object-contain mx-auto shadow-2xl transition-all duration-300"
+            : "relative z-10 h-full w-full md:w-auto md:max-w-full md:aspect-[9/16] object-cover md:object-contain mx-auto shadow-2xl transition-all duration-300"
         }
       />
 
@@ -105,28 +120,26 @@ export function HeroBanner() {
             onClick={() => handleModeChange("horizontal")}
             aria-label="Horizontal video mode"
             title="Horizontal mode"
-            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.12em] transition-all duration-200 ${
+            className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center transition-all duration-200 ${
               videoMode === "horizontal"
                 ? "bg-white text-black"
                 : "text-white/70 hover:text-white"
             }`}
           >
-            <RectangleHorizontal size={15} />
-            <span className="hidden sm:inline">Horizontal</span>
+            <RectangleHorizontal size={16} />
           </button>
           <button
             type="button"
             onClick={() => handleModeChange("vertical")}
             aria-label="Vertical video mode"
             title="Vertical mode"
-            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.12em] transition-all duration-200 ${
+            className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center transition-all duration-200 ${
               videoMode === "vertical"
                 ? "bg-white text-black"
                 : "text-white/70 hover:text-white"
             }`}
           >
-            <RectangleVertical size={15} />
-            <span className="hidden sm:inline">Vertical</span>
+            <RectangleVertical size={16} />
           </button>
         </div>
       </div>
